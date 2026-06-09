@@ -10,44 +10,37 @@ interface AddProductResult {
   duplicateStatus?: ProductStatus;
 }
 
-interface ProductQueryBarBaseProps {
+interface ProductQueryBarProps {
   query: string;
+  placeholder: string;
   onQueryChange: (query: string) => void;
-}
-
-interface ProductQueryBarSearchProps extends ProductQueryBarBaseProps {
-  mode: 'search-only';
-}
-
-interface ProductQueryBarAddProps extends ProductQueryBarBaseProps {
-  mode: 'search-and-add';
   onAdd: (name: string) => Promise<AddProductResult>;
   onGoToTab: (tab: ProductStatus, query?: string) => void;
 }
 
-type ProductQueryBarProps = ProductQueryBarSearchProps | ProductQueryBarAddProps;
-
-export function ProductQueryBar(props: ProductQueryBarProps) {
-  const { query, onQueryChange, mode } = props;
+export function ProductQueryBar({
+  query,
+  placeholder,
+  onQueryChange,
+  onAdd,
+  onGoToTab,
+}: ProductQueryBarProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicateStatus, setDuplicateStatus] = useState<
     ProductStatus | undefined
   >(undefined);
 
-  const isAddMode = mode === 'search-and-add';
-  const inputId = isAddMode ? 'product-query' : 'product-search';
-
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!isAddMode || submitting) {
+    if (submitting) {
       return;
     }
 
     setError(null);
     setDuplicateStatus(undefined);
     setSubmitting(true);
-    const result = await props.onAdd(query);
+    const result = await onAdd(query);
     setSubmitting(false);
 
     if (result.error) {
@@ -60,21 +53,21 @@ export function ProductQueryBar(props: ProductQueryBarProps) {
   };
 
   const handleGoToDuplicate = () => {
-    if (!isAddMode || !duplicateStatus) {
+    if (!duplicateStatus) {
       return;
     }
 
-    props.onGoToTab(duplicateStatus, query.trim());
+    onGoToTab(duplicateStatus, query.trim());
     setError(null);
     setDuplicateStatus(undefined);
   };
 
-  const content = (
-    <>
+  return (
+    <form className="query-bar" onSubmit={handleSubmit}>
       {error && !duplicateStatus && (
         <ErrorBanner message={error} onDismiss={() => setError(null)} />
       )}
-      {error && duplicateStatus && isAddMode && (
+      {error && duplicateStatus && (
         <div className="query-bar__duplicate-hint">
           <p className="query-bar__duplicate-text">{error}</p>
           <button
@@ -91,19 +84,15 @@ export function ProductQueryBar(props: ProductQueryBarProps) {
       <div className="query-bar__row">
         <div className="query-bar__input-wrap">
           <input
-            id={inputId}
+            id="product-query"
             type="search"
             className="query-bar__input"
-            placeholder={
-              isAddMode
-                ? 'Найти или добавить продукт...'
-                : 'Найти продукт...'
-            }
+            placeholder={placeholder}
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
             disabled={submitting}
             autoComplete="off"
-            enterKeyHint={isAddMode ? 'done' : 'search'}
+            enterKeyHint="done"
           />
           {query && (
             <button
@@ -116,26 +105,14 @@ export function ProductQueryBar(props: ProductQueryBarProps) {
             </button>
           )}
         </div>
-        {isAddMode && (
-          <button
-            className="query-bar__button"
-            type="submit"
-            disabled={submitting || !query.trim()}
-          >
-            {submitting ? '...' : 'Добавить'}
-          </button>
-        )}
+        <button
+          className="query-bar__button"
+          type="submit"
+          disabled={submitting || !query.trim()}
+        >
+          {submitting ? '...' : 'Добавить'}
+        </button>
       </div>
-    </>
+    </form>
   );
-
-  if (isAddMode) {
-    return (
-      <form className="query-bar" onSubmit={handleSubmit}>
-        {content}
-      </form>
-    );
-  }
-
-  return <div className="query-bar">{content}</div>;
 }

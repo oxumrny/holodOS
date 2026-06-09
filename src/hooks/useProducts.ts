@@ -38,7 +38,10 @@ export function useProducts(status: ProductStatus) {
     fetchProducts();
   }, [fetchProducts]);
 
-  const addProduct = async (name: string) => {
+  const addProduct = async (
+    name: string,
+    targetStatus: ProductStatus = status,
+  ) => {
     const trimmed = name.trim();
     if (!trimmed) {
       return { error: 'Введите название продукта' };
@@ -68,11 +71,24 @@ export function useProducts(status: ProductStatus) {
       };
     }
 
-    const { error: insertError } = await supabase.from('products').insert({
+    const insertPayload: {
+      name: string;
+      status: ProductStatus;
+      category: string;
+      finished_at?: string;
+    } = {
       name: normalizedName,
-      status: 'active',
+      status: targetStatus,
       category: resolveDetectedCategory(detectCategory(normalizedName)),
-    });
+    };
+
+    if (targetStatus === 'finished') {
+      insertPayload.finished_at = new Date().toISOString();
+    }
+
+    const { error: insertError } = await supabase
+      .from('products')
+      .insert(insertPayload);
 
     if (insertError) {
       return { error: insertError.message };

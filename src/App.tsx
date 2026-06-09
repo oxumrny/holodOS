@@ -81,6 +81,18 @@ export default function App() {
     return result;
   };
 
+  const handleAddProduct = async (name: string) => {
+    const targetStatus = tab === 'active' ? 'active' : 'finished';
+    const adder = tab === 'active' ? active : finished;
+    const result = await adder.addProduct(name, targetStatus);
+
+    if (!result.error && tab === 'finished') {
+      await Promise.all([finished.refresh(), active.refresh()]);
+    }
+
+    return result;
+  };
+
   return (
     <div className="app">
       <header className="app__header">
@@ -131,21 +143,17 @@ export default function App() {
       ) : (
         <>
       <main className="app__main">
-        {tab === 'active' ? (
-          <ProductQueryBar
-            mode="search-and-add"
-            query={searchQuery}
-            onQueryChange={setSearchQuery}
-            onAdd={active.addProduct}
-            onGoToTab={(nextTab, query) => handleGoToTab(nextTab, query)}
-          />
-        ) : (
-          <ProductQueryBar
-            mode="search-only"
-            query={searchQuery}
-            onQueryChange={setSearchQuery}
-          />
-        )}
+        <ProductQueryBar
+          query={searchQuery}
+          placeholder={
+            tab === 'active'
+              ? 'Найти или добавить в холодос..'
+              : 'Найти или купить в лидле..'
+          }
+          onQueryChange={setSearchQuery}
+          onAdd={handleAddProduct}
+          onGoToTab={(nextTab, query) => handleGoToTab(nextTab, query)}
+        />
         {tab === 'active' ? (
             <ProductList
               products={active.products}
@@ -170,7 +178,7 @@ export default function App() {
             error={finished.error}
             variant="finished"
             emptyTitle="Пока ничего не закончилось"
-            emptySubtitle="Когда продукт кончится, отметьте его на вкладке «В холодосе»"
+            emptySubtitle="Добавьте продукт через поле выше или отметьте «кончилось» на вкладке холодос"
               searchQuery={searchQuery}
               musthaveRevision={musthaveRevision}
               onRefresh={finished.refresh}
