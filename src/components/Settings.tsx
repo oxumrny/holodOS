@@ -10,8 +10,8 @@ import {
   addCustomCategory,
   deleteCategoryFromConfig,
   getAllCategories,
+  moveCategoryInOrder,
   renameCategoryInConfig,
-  sortCategoriesForSelect,
 } from '@/lib/categoryConfig';
 import { supabase } from '@/lib/supabase';
 import type { Product } from '@/types/product';
@@ -75,7 +75,7 @@ export function Settings({ onBack }: SettingsProps) {
       }
     }
 
-    return sortCategoriesForSelect(merged);
+    return merged;
   }, [products, categoryRevision]);
 
   const sortedProducts = useMemo(
@@ -195,6 +195,11 @@ export function Settings({ onBack }: SettingsProps) {
     await fetchProducts();
   };
 
+  const handleMoveCategory = (category: string, direction: 'up' | 'down') => {
+    moveCategoryInOrder(categoryOptions, category, direction);
+    bumpCategories();
+  };
+
   return (
     <div className="settings">
       <div className="settings__top">
@@ -290,8 +295,11 @@ export function Settings({ onBack }: SettingsProps) {
 
           <section className="settings__section">
             <h3 className="settings__section-title">Категории</h3>
+            <p className="settings__section-hint">
+              Стрелками ↑ ↓ задайте порядок категорий на главных вкладках
+            </p>
             <ul className="settings__category-list">
-              {categoryOptions.map((category) => (
+              {categoryOptions.map((category, index) => (
                 <li key={category} className="settings__category-row">
                   {editingCategory === category ? (
                     <form
@@ -325,6 +333,26 @@ export function Settings({ onBack }: SettingsProps) {
                     </form>
                   ) : (
                     <>
+                      <div className="settings__category-order">
+                        <button
+                          type="button"
+                          className="settings__category-move"
+                          aria-label={`Поднять категорию ${category}`}
+                          disabled={index === 0}
+                          onClick={() => handleMoveCategory(category, 'up')}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className="settings__category-move"
+                          aria-label={`Опустить категорию ${category}`}
+                          disabled={index === categoryOptions.length - 1}
+                          onClick={() => handleMoveCategory(category, 'down')}
+                        >
+                          ↓
+                        </button>
+                      </div>
                       <span className="settings__category-name">{category}</span>
                       <div className="settings__category-actions">
                         <button

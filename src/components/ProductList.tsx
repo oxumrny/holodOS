@@ -251,7 +251,7 @@ export function ProductList({
     const base = getAllCategories();
     const present = new Set(products.map(resolveCategory));
     const extras = [...present].filter((category) => !base.includes(category));
-    return [...base, ...extras.sort((a, b) => a.localeCompare(b, 'ru'))];
+    return [...base, ...extras];
   }, [products]);
 
   const availableCategories = useMemo(() => {
