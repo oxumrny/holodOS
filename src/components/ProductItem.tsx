@@ -1,12 +1,12 @@
 import type { Product } from '@/types/product';
 
+import { MusthaveBadge } from './MusthaveBadge';
 import './ProductItem.css';
 
 interface ProductItemProps {
   product: Product;
   variant: 'active' | 'finished';
-  isPinned?: boolean;
-  onTogglePin?: (id: string) => void;
+  showMusthaveBadge?: boolean;
   onAction: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -14,8 +14,7 @@ interface ProductItemProps {
 export function ProductItem({
   product,
   variant,
-  isPinned = false,
-  onTogglePin,
+  showMusthaveBadge = false,
   onAction,
   onDelete,
 }: ProductItemProps) {
@@ -45,17 +44,7 @@ export function ProductItem({
       <div className="product-item__info">
         <p className="product-item__name">{product.name}</p>
       </div>
-      {onTogglePin && (
-        <button
-          type="button"
-          className={`product-item__pin ${isPinned ? 'product-item__pin--active' : ''}`}
-          aria-label={isPinned ? 'Убрать из частых' : 'Закрепить в частых'}
-          title={isPinned ? 'Убрать из частых' : 'Закрепить в частых'}
-          onClick={() => onTogglePin(product.id)}
-        >
-          ★
-        </button>
-      )}
+      {showMusthaveBadge && <MusthaveBadge active />}
       <button
         type="button"
         className="product-item__delete"

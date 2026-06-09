@@ -1,0 +1,54 @@
+.musthave-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.musthave-badge__shape {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  transform: skewX(-14deg);
+  background: #fff;
+  border: 1px solid #d4e4f0;
+}
+
+.musthave-badge__text {
+  display: inline-block;
+  transform: skewX(14deg);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  line-height: 1.2;
+  color: #8ba4b8;
+}
+
+.musthave-badge--interactive {
+  cursor: pointer;
+}
+
+.musthave-badge--interactive:hover .musthave-badge__shape {
+  border-color: #e3c038;
+  background: #fff9df;
+}
+
+.musthave-badge--interactive:hover .musthave-badge__text {
+  color: #8a6a00;
+}
+
+.musthave-badge--active .musthave-badge__shape {
+  background: linear-gradient(180deg, #fff9df 0%, #ffeaa0 100%);
+  border-color: #e3c038;
+}
+
+.musthave-badge--active .musthave-badge__text {
+  color: #8a6a00;
+}
+
+.musthave-badge--readonly {
+  cursor: default;
+}

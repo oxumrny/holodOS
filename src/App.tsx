@@ -19,6 +19,7 @@ export default function App() {
   const [view, setView] = useState<View>('main');
   const [tab, setTab] = useState<Tab>('active');
   const [searchQuery, setSearchQuery] = useState('');
+  const [musthaveRevision, setMusthaveRevision] = useState(0);
 
   const active = useProducts('active');
   const finished = useProducts('finished');
@@ -41,6 +42,7 @@ export default function App() {
 
   const handleBackFromSettings = () => {
     setView('main');
+    setMusthaveRevision((revision) => revision + 1);
     void Promise.all([active.refresh(), finished.refresh()]);
   };
 
@@ -154,6 +156,7 @@ export default function App() {
               emptyTitle="Холодильник пуст"
               emptySubtitle="Добавьте первый продукт — молоко, яйца, что угодно"
               searchQuery={searchQuery}
+              musthaveRevision={musthaveRevision}
               onRefresh={active.refresh}
               onAction={handleMarkAsFinished}
               onOtherTabAction={handleOtherTabActionFromActive}
@@ -168,8 +171,9 @@ export default function App() {
             variant="finished"
             emptyTitle="Пока ничего не закончилось"
             emptySubtitle="Когда продукт кончится, отметьте его на вкладке «В холодосе»"
-            searchQuery={searchQuery}
-            onRefresh={finished.refresh}
+              searchQuery={searchQuery}
+              musthaveRevision={musthaveRevision}
+              onRefresh={finished.refresh}
             onAction={handleRestoreProduct}
             onOtherTabAction={handleOtherTabActionFromFinished}
             onDelete={handleDelete}

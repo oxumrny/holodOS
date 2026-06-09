@@ -3,9 +3,7 @@ import { useMemo, useState } from 'react';
 import { getAllCategories } from '@/lib/categoryConfig';
 import {
   getFrequentProductIds,
-  isProductPinned,
   recordProductActivity,
-  toggleProductPin,
 } from '@/lib/frequentProducts';
 import {
   filterProductsBySearch,
@@ -26,6 +24,7 @@ interface ProductListProps {
   emptyTitle: string;
   emptySubtitle: string;
   searchQuery: string;
+  musthaveRevision: number;
   onRefresh: () => void;
   onAction: (id: string) => Promise<{ error: string | null }>;
   onOtherTabAction: (id: string) => Promise<{ error: string | null }>;
@@ -75,14 +74,12 @@ function CategorizedProductList({
   variant,
   onAction,
   onDelete,
-  onTogglePin,
 }: {
   products: Product[];
   showCategoryHeaders: boolean;
   variant: 'active' | 'finished';
   onAction: (id: string) => void;
   onDelete: (id: string) => void;
-  onTogglePin: (id: string) => void;
 }) {
   const entries = buildCategorizedEntries(products, showCategoryHeaders);
 
@@ -98,8 +95,6 @@ function CategorizedProductList({
             <ProductItem
               product={entry.product}
               variant={variant}
-              isPinned={isProductPinned(entry.product.id)}
-              onTogglePin={onTogglePin}
               onAction={onAction}
               onDelete={onDelete}
             />
@@ -115,13 +110,11 @@ function FrequentProductList({
   variant,
   onAction,
   onDelete,
-  onTogglePin,
 }: {
   products: Product[];
   variant: 'active' | 'finished';
   onAction: (id: string) => void;
   onDelete: (id: string) => void;
-  onTogglePin: (id: string) => void;
 }) {
   return (
     <section className="product-list__frequent" aria-label="Часто используемые">
@@ -132,8 +125,7 @@ function FrequentProductList({
             <ProductItem
               product={product}
               variant={variant}
-              isPinned={isProductPinned(product.id)}
-              onTogglePin={onTogglePin}
+              showMusthaveBadge
               onAction={onAction}
               onDelete={onDelete}
             />
@@ -152,7 +144,6 @@ function CrossTabResults({
   showCategoryHeaders,
   onAction,
   onDelete,
-  onTogglePin,
 }: {
   searchQuery: string;
   sectionLocation: string;
@@ -161,7 +152,6 @@ function CrossTabResults({
   showCategoryHeaders: boolean;
   onAction: (id: string) => void;
   onDelete: (id: string) => void;
-  onTogglePin: (id: string) => void;
 }) {
   return (
     <section className="product-list__cross-tab" aria-label={sectionLocation}>
@@ -174,7 +164,6 @@ function CrossTabResults({
         variant={itemVariant}
         onAction={onAction}
         onDelete={onDelete}
-        onTogglePin={onTogglePin}
       />
     </section>
   );
@@ -208,6 +197,7 @@ export function ProductList({
   emptyTitle,
   emptySubtitle,
   searchQuery,
+  musthaveRevision,
   onRefresh,
   onAction,
   onOtherTabAction,
@@ -219,11 +209,6 @@ export function ProductList({
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [frequentRevision, setFrequentRevision] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  const handleTogglePin = (id: string) => {
-    toggleProductPin(id);
-    setFrequentRevision((revision) => revision + 1);
-  };
 
   const handleCategorySelect = (category: ProductCategory | 'all') => {
     setSelectedCategory(category);
@@ -324,7 +309,7 @@ export function ProductList({
 
   const frequentProductIds = useMemo(
     () => getFrequentProductIds(products.map((product) => product.id)),
-    [products, frequentRevision],
+    [products, musthaveRevision, frequentRevision],
   );
 
   const { frequentProducts, mainProducts } = useMemo(() => {
@@ -354,7 +339,6 @@ export function ProductList({
       showCategoryHeaders={showCategoryHeaders}
       onAction={handleOtherTabAction}
       onDelete={handleDelete}
-      onTogglePin={handleTogglePin}
     />
   ) : null;
 
@@ -470,7 +454,6 @@ export function ProductList({
           variant={variant}
           onAction={handleAction}
           onDelete={handleDelete}
-          onTogglePin={handleTogglePin}
         />
       )}
 
@@ -481,7 +464,6 @@ export function ProductList({
           variant={variant}
           onAction={handleAction}
           onDelete={handleDelete}
-          onTogglePin={handleTogglePin}
         />
       )}
 

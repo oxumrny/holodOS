@@ -58,18 +58,27 @@ export function isProductPinned(productId: string): boolean {
   return readPinned().includes(productId);
 }
 
-export function toggleProductPin(productId: string): boolean {
+export function toggleProductPin(
+  productId: string,
+): { isPinned: boolean; error: string | null } {
   const pinned = readPinned();
   const index = pinned.indexOf(productId);
 
   if (index >= 0) {
     pinned.splice(index, 1);
     writePinned(pinned);
-    return false;
+    return { isPinned: false, error: null };
+  }
+
+  if (pinned.length >= MAX_FREQUENT) {
+    return {
+      isPinned: false,
+      error: `Можно закрепить не больше ${MAX_FREQUENT} продуктов`,
+    };
   }
 
   writePinned([productId, ...pinned]);
-  return true;
+  return { isPinned: true, error: null };
 }
 
 export function getFrequentProductIds(availableIds: string[]): string[] {

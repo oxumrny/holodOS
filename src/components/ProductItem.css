@@ -10,32 +10,6 @@
   margin-bottom: 6px;
 }
 
-.product-item__pin {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  background: none;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  line-height: 1;
-  color: #8ba4b8;
-  cursor: pointer;
-}
-
-.product-item__pin:hover {
-  color: #1b7fc4;
-  background: #f0f7fc;
-}
-
-.product-item__pin--active {
-  color: #1b7fc4;
-}
-
 .product-item__delete {
   flex-shrink: 0;
   display: flex;

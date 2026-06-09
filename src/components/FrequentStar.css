@@ -1,0 +1,34 @@
+.frequent-star {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  line-height: 1;
+  color: #8ba4b8;
+  cursor: pointer;
+}
+
+.frequent-star:hover {
+  color: #1b7fc4;
+  background: #f0f7fc;
+}
+
+.frequent-star--active {
+  color: #1b7fc4;
+}
+
+.frequent-star--readonly {
+  cursor: default;
+}
+
+.frequent-star--readonly:hover {
+  color: #1b7fc4;
+  background: none;
+}
