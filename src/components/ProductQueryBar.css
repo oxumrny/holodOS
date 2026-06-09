@@ -1,0 +1,127 @@
+.query-bar {
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.query-bar__row {
+  display: flex;
+  gap: 10px;
+}
+
+.query-bar__input-wrap {
+  position: relative;
+  flex: 1;
+}
+
+.query-bar__input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f0f7fc;
+  border: 1px solid #d4e4f0;
+  border-radius: 12px;
+  padding: 12px 36px 12px 14px;
+  font-size: 16px;
+  color: #1a2b3c;
+}
+
+.query-bar__input:focus {
+  outline: 2px solid #1b7fc4;
+  outline-offset: 1px;
+}
+
+.query-bar__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.query-bar__clear {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 999px;
+  font-size: 18px;
+  line-height: 1;
+  color: #5a6b7c;
+  cursor: pointer;
+}
+
+.query-bar__clear:hover {
+  border-color: #1b7fc4;
+  color: #1b7fc4;
+}
+
+.query-bar__button {
+  background: #1b7fc4;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0 18px;
+  min-width: 100px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.query-bar__button:hover:not(:disabled) {
+  background: #1565a0;
+}
+
+.query-bar__button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.query-bar__duplicate-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  background: #f0f7fc;
+  border: 1px solid #d4e4f0;
+  border-radius: 12px;
+}
+
+.query-bar__duplicate-text {
+  margin: 0;
+  font-size: 14px;
+  color: #1a2b3c;
+  line-height: 1.45;
+}
+
+.query-bar__duplicate-action {
+  align-self: flex-start;
+  background: #1b7fc4;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.query-bar__duplicate-action:hover {
+  background: #1565a0;
+}
+
+@media (max-width: 480px) {
+  .query-bar__row {
+    flex-direction: column;
+  }
+
+  .query-bar__button {
+    padding: 12px 18px;
+  }
+}

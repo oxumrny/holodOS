@@ -5,6 +5,8 @@ import './ProductItem.css';
 interface ProductItemProps {
   product: Product;
   variant: 'active' | 'finished';
+  isPinned?: boolean;
+  onTogglePin?: (id: string) => void;
   onAction: (id: string) => void;
   onDelete: (id: string) => void;
 }
@@ -12,21 +14,15 @@ interface ProductItemProps {
 export function ProductItem({
   product,
   variant,
+  isPinned = false,
+  onTogglePin,
   onAction,
   onDelete,
 }: ProductItemProps) {
   const isActive = variant === 'active';
 
   return (
-    <div className="product-item">
-      <button
-        type="button"
-        className="product-item__delete"
-        aria-label="Удалить"
-        onClick={() => onDelete(product.id)}
-      >
-        ×
-      </button>
+    <div className="product-item product-item--compact">
       {isActive ? (
         <button
           type="button"
@@ -48,12 +44,26 @@ export function ProductItem({
       )}
       <div className="product-item__info">
         <p className="product-item__name">{product.name}</p>
-        <p className="product-item__meta">
-          <span className="product-item__category">
-            {product.category ?? 'прочее'}
-          </span>
-        </p>
       </div>
+      {onTogglePin && (
+        <button
+          type="button"
+          className={`product-item__pin ${isPinned ? 'product-item__pin--active' : ''}`}
+          aria-label={isPinned ? 'Убрать из частых' : 'Закрепить в частых'}
+          title={isPinned ? 'Убрать из частых' : 'Закрепить в частых'}
+          onClick={() => onTogglePin(product.id)}
+        >
+          ★
+        </button>
+      )}
+      <button
+        type="button"
+        className="product-item__delete"
+        aria-label="Удалить"
+        onClick={() => onDelete(product.id)}
+      >
+        ×
+      </button>
     </div>
   );
 }

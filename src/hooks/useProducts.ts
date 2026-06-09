@@ -48,7 +48,7 @@ export function useProducts(status: ProductStatus) {
 
     const { data: existingProduct, error: lookupError } = await supabase
       .from('products')
-      .select('id')
+      .select('id, status, name')
       .ilike('name', normalizedName)
       .maybeSingle();
 
@@ -57,7 +57,15 @@ export function useProducts(status: ProductStatus) {
     }
 
     if (existingProduct) {
-      return { error: 'Такой продукт уже есть' };
+      const location =
+        existingProduct.status === 'active'
+          ? 'в холодосе'
+          : 'в списке покупок';
+
+      return {
+        error: `«${existingProduct.name}» уже ${location}`,
+        duplicateStatus: existingProduct.status as ProductStatus,
+      };
     }
 
     const { error: insertError } = await supabase.from('products').insert({
