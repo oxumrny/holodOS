@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { FrequentStar } from '@/components/FrequentStar';
@@ -11,7 +11,7 @@ import {
   deleteCategoryFromConfig,
   getAllCategories,
   renameCategoryInConfig,
-  setCategoryOrder,
+  sortCategoriesForSelect,
 } from '@/lib/categoryConfig';
 import { supabase } from '@/lib/supabase';
 import type { Product } from '@/types/product';
@@ -36,8 +36,6 @@ export function Settings({ onBack }: SettingsProps) {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
   const [musthaveRevision, setMusthaveRevision] = useState(0);
-  const [draggingCategory, setDraggingCategory] = useState<string | null>(null);
-  const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -69,17 +67,15 @@ export function Settings({ onBack }: SettingsProps) {
   const categoryOptions = useMemo(() => {
     void categoryRevision;
     const merged = getAllCategories();
-    const known = new Set(merged);
 
     for (const product of products) {
       const category = resolveCategory(product);
-      if (!known.has(category)) {
+      if (!merged.includes(category)) {
         merged.push(category);
-        known.add(category);
       }
     }
 
-    return merged;
+    return sortCategoriesForSelect(merged);
   }, [products, categoryRevision]);
 
   const sortedProducts = useMemo(
@@ -199,63 +195,6 @@ export function Settings({ onBack }: SettingsProps) {
     await fetchProducts();
   };
 
-  const handleCategoryDragStart =
-    (category: string) => (event: DragEvent<HTMLButtonElement>) => {
-      if (editingCategory) {
-        event.preventDefault();
-        return;
-      }
-
-      setDraggingCategory(category);
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', category);
-    };
-
-  const handleCategoryDragOver =
-    (category: string) => (event: DragEvent<HTMLLIElement>) => {
-      event.preventDefault();
-      if (draggingCategory && category !== draggingCategory) {
-        setDragOverCategory(category);
-      }
-    };
-
-  const handleCategoryDrop =
-    (targetCategory: string) => (event: DragEvent<HTMLLIElement>) => {
-      event.preventDefault();
-
-      const sourceCategory =
-        draggingCategory ?? event.dataTransfer.getData('text/plain');
-
-      if (!sourceCategory || sourceCategory === targetCategory) {
-        setDraggingCategory(null);
-        setDragOverCategory(null);
-        return;
-      }
-
-      const fromIndex = categoryOptions.indexOf(sourceCategory);
-      const toIndex = categoryOptions.indexOf(targetCategory);
-
-      if (fromIndex === -1 || toIndex === -1) {
-        setDraggingCategory(null);
-        setDragOverCategory(null);
-        return;
-      }
-
-      const nextOrder = [...categoryOptions];
-      nextOrder.splice(fromIndex, 1);
-      nextOrder.splice(toIndex, 0, sourceCategory);
-
-      setCategoryOrder(nextOrder);
-      bumpCategories();
-      setDraggingCategory(null);
-      setDragOverCategory(null);
-    };
-
-  const handleCategoryDragEnd = () => {
-    setDraggingCategory(null);
-    setDragOverCategory(null);
-  };
-
   return (
     <div className="settings">
       <div className="settings__top">
@@ -351,28 +290,9 @@ export function Settings({ onBack }: SettingsProps) {
 
           <section className="settings__section">
             <h3 className="settings__section-title">Категории</h3>
-            <p className="settings__section-hint">
-              Перетащите карточки за ручку слева, чтобы изменить порядок на
-              главных вкладках
-            </p>
             <ul className="settings__category-list">
               {categoryOptions.map((category) => (
-                <li
-                  key={category}
-                  className={[
-                    'settings__category-row',
-                    draggingCategory === category
-                      ? 'settings__category-row--dragging'
-                      : '',
-                    dragOverCategory === category
-                      ? 'settings__category-row--drag-over'
-                      : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onDragOver={handleCategoryDragOver(category)}
-                  onDrop={handleCategoryDrop(category)}
-                >
+                <li key={category} className="settings__category-row">
                   {editingCategory === category ? (
                     <form
                       className="settings__category-edit"
@@ -405,16 +325,6 @@ export function Settings({ onBack }: SettingsProps) {
                     </form>
                   ) : (
                     <>
-                      <button
-                        type="button"
-                        className="settings__category-drag"
-                        draggable
-                        aria-label={`Перетащить категорию ${category}`}
-                        onDragStart={handleCategoryDragStart(category)}
-                        onDragEnd={handleCategoryDragEnd}
-                      >
-                        ⋮⋮
-                      </button>
                       <span className="settings__category-name">{category}</span>
                       <div className="settings__category-actions">
                         <button

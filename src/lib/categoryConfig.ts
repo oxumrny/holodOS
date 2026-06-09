@@ -3,7 +3,6 @@ import { CATEGORY_ORDER } from '@/types/product';
 const CUSTOM_KEY = 'holodos-custom-categories';
 const HIDDEN_KEY = 'holodos-hidden-categories';
 const ALIASES_KEY = 'holodos-category-aliases';
-const ORDER_KEY = 'holodos-category-order';
 const MISC_CATEGORY = 'прочее';
 
 function readJsonArray(key: string): string[] {
@@ -43,34 +42,6 @@ export function sortCategoriesForSelect(categories: string[]): string[] {
   return categories.includes(MISC_CATEGORY) ? [MISC_CATEGORY, ...rest] : rest;
 }
 
-export function getCategoryOrder(): string[] {
-  return readJsonArray(ORDER_KEY);
-}
-
-export function setCategoryOrder(order: string[]): void {
-  localStorage.setItem(ORDER_KEY, JSON.stringify(order));
-}
-
-function applyCategoryOrder(categories: string[]): string[] {
-  const savedOrder = getCategoryOrder();
-  if (savedOrder.length === 0) {
-    return sortCategoriesForSelect(categories);
-  }
-
-  const remaining = new Set(categories);
-  const ordered: string[] = [];
-
-  for (const category of savedOrder) {
-    if (remaining.has(category)) {
-      ordered.push(category);
-      remaining.delete(category);
-    }
-  }
-
-  const extras = [...remaining].sort((a, b) => a.localeCompare(b, 'ru'));
-  return [...ordered, ...extras];
-}
-
 export function getAllCategories(): string[] {
   const hidden = new Set(getHiddenCategories());
   const merged = CATEGORY_ORDER.filter((category) => !hidden.has(category));
@@ -81,7 +52,7 @@ export function getAllCategories(): string[] {
     }
   }
 
-  return applyCategoryOrder(merged);
+  return sortCategoriesForSelect(merged);
 }
 
 export function resolveDetectedCategory(detected: string): string {
@@ -119,12 +90,6 @@ export function addCustomCategory(name: string): { error: string | null } {
   const custom = getCustomCategories();
   custom.push(trimmed);
   localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom));
-
-  const order = getCategoryOrder();
-  if (order.length > 0) {
-    order.push(trimmed);
-    setCategoryOrder(order);
-  }
 
   return { error: null };
 }
@@ -173,15 +138,6 @@ export function renameCategoryInConfig(
   localStorage.setItem(HIDDEN_KEY, JSON.stringify(hidden));
   localStorage.setItem(ALIASES_KEY, JSON.stringify(aliases));
 
-  const order = getCategoryOrder();
-  if (order.length > 0) {
-    const index = order.indexOf(oldName);
-    if (index !== -1) {
-      order[index] = trimmed;
-      setCategoryOrder(order);
-    }
-  }
-
   return { error: null };
 }
 
@@ -202,11 +158,6 @@ export function deleteCategoryFromConfig(name: string): { error: string | null }
   localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom));
   localStorage.setItem(HIDDEN_KEY, JSON.stringify(hidden));
   localStorage.setItem(ALIASES_KEY, JSON.stringify(aliases));
-
-  const order = getCategoryOrder();
-  if (order.length > 0) {
-    setCategoryOrder(order.filter((category) => category !== name));
-  }
 
   return { error: null };
 }
