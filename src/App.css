@@ -1,0 +1,89 @@
+.app {
+  min-height: 100vh;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.app__header {
+  margin-bottom: 24px;
+}
+
+.app__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a2b3c;
+}
+
+.app__settings {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6b7c;
+  cursor: pointer;
+}
+
+.app__settings:hover {
+  border-color: #1b7fc4;
+  color: #1b7fc4;
+}
+
+.app__subtitle {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: #5a6b7c;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 14px;
+  padding: 6px;
+}
+
+.tabs__button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #8ba4b8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tabs__button--active {
+  background: #f0f7fc;
+  color: #1b7fc4;
+}
+
+.tabs__button:hover:not(.tabs__button--active) {
+  color: #5a6b7c;
+}
+
+.tabs__icon {
+  font-size: 18px;
+}
+
+.app__main {
+  min-height: 300px;
+}
