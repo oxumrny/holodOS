@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { ErrorBanner } from '@/components/ErrorBanner';
 import {
   ProductSettingsForm,
+  type ProductSettingsFormHandle,
   type ProductSettingsValues,
 } from '@/components/ProductSettingsForm';
 import { useStores } from '@/hooks/useStores';
@@ -96,6 +97,7 @@ export function Settings({ onBack }: SettingsProps) {
     null,
   );
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const productSettingsFormRef = useRef<ProductSettingsFormHandle>(null);
 
   const fetchProducts = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) {
@@ -312,6 +314,30 @@ export function Settings({ onBack }: SettingsProps) {
     const savedProductId = editingProduct.id;
     closeProductSettings();
     highlightProduct(savedProductId);
+    return { error: null };
+  };
+
+  const handleDeleteProduct = async (): Promise<{ error: string | null }> => {
+    if (!editingProduct) {
+      return { error: 'Продукт не выбран' };
+    }
+
+    const { data: deletedRows, error: deleteError } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', editingProduct.id)
+      .select('id');
+
+    if (deleteError) {
+      return { error: deleteError.message };
+    }
+
+    if (!deletedRows?.length) {
+      return { error: 'Не удалось удалить продукт' };
+    }
+
+    await fetchProducts({ silent: true });
+    closeProductSettings();
     return { error: null };
   };
 
@@ -873,12 +899,23 @@ export function Settings({ onBack }: SettingsProps) {
     }
 
     return (
-      <div className="settings__modal-overlay">
+      <div
+        className="settings__modal-overlay"
+        onClick={() => {
+          if (loadingExclusions) {
+            closeProductSettings();
+            return;
+          }
+
+          productSettingsFormRef.current?.requestClose();
+        }}
+      >
         <div
           className="settings__modal"
           role="dialog"
           aria-modal="true"
           aria-labelledby="product-settings-title"
+          onClick={(event) => event.stopPropagation()}
         >
           {loadingExclusions ? (
             <div className="settings__modal-loading">
@@ -886,6 +923,7 @@ export function Settings({ onBack }: SettingsProps) {
             </div>
           ) : (
             <ProductSettingsForm
+              ref={productSettingsFormRef}
               stores={stores}
               categoryOptions={categoryOptions}
               initialValues={{
@@ -895,6 +933,7 @@ export function Settings({ onBack }: SettingsProps) {
                 excludedStoreIds: editingExclusions,
               }}
               onSave={handleSaveProductSettings}
+              onDelete={handleDeleteProduct}
               onClose={closeProductSettings}
             />
           )}

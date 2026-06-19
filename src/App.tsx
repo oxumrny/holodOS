@@ -93,16 +93,6 @@ export default function App() {
     void Promise.all([active.refresh(), finished.refresh()]);
   };
 
-  const handleDelete = async (id: string) => {
-    const result = await active.deleteProduct(id);
-
-    if (!result.error) {
-      await Promise.all([active.refresh(), finished.refresh()]);
-    }
-
-    return result;
-  };
-
   const handleMarkAsFinished = async (id: string) => active.markAsFinished(id);
 
   const handleRestoreProduct = async (id: string) => finished.restoreProduct(id);
@@ -219,7 +209,6 @@ export default function App() {
               onRefresh={active.refresh}
               onAction={handleMarkAsFinished}
               onOtherTabAction={handleOtherTabActionFromActive}
-              onDelete={handleDelete}
             />
         ) : (
           <ProductList
@@ -238,7 +227,6 @@ export default function App() {
             onRefresh={finished.refresh}
             onAction={handleRestoreProduct}
             onOtherTabAction={handleOtherTabActionFromFinished}
-            onDelete={handleDelete}
           />
         )}
       </main>

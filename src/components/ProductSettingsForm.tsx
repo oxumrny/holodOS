@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 import { FrequentStar } from '@/components/FrequentStar';
 import { StoreExclusionsField } from '@/components/StoreExclusionsField';
@@ -18,7 +18,12 @@ interface ProductSettingsFormProps {
   categoryOptions: string[];
   initialValues: ProductSettingsValues;
   onSave: (values: ProductSettingsValues) => Promise<{ error: string | null }>;
+  onDelete: () => Promise<{ error: string | null }>;
   onClose: () => void;
+}
+
+export interface ProductSettingsFormHandle {
+  requestClose: () => void;
 }
 
 function areStoreIdsEqual(left: string[], right: string[]): boolean {
@@ -32,13 +37,20 @@ function areStoreIdsEqual(left: string[], right: string[]): boolean {
   return sortedLeft.every((storeId, index) => storeId === sortedRight[index]);
 }
 
-export function ProductSettingsForm({
-  stores,
-  categoryOptions,
-  initialValues,
-  onSave,
-  onClose,
-}: ProductSettingsFormProps) {
+export const ProductSettingsForm = forwardRef<
+  ProductSettingsFormHandle,
+  ProductSettingsFormProps
+>(function ProductSettingsForm(
+  {
+    stores,
+    categoryOptions,
+    initialValues,
+    onSave,
+    onDelete,
+    onClose,
+  },
+  ref,
+) {
   const [name, setName] = useState(initialValues.name);
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
@@ -48,8 +60,12 @@ export function ProductSettingsForm({
   const [excludedStoreIds, setExcludedStoreIds] = useState(
     initialValues.excludedStoreIds,
   );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isBusy = saving || deleting;
 
   const normalizedName = name.trim().toLowerCase();
 
@@ -69,7 +85,7 @@ export function ProductSettingsForm({
   );
 
   const startEditingName = () => {
-    if (saving) {
+    if (isBusy) {
       return;
     }
 
@@ -97,7 +113,12 @@ export function ProductSettingsForm({
   };
 
   const handleCloseRequest = useCallback(() => {
-    if (saving) {
+    if (isBusy) {
+      return;
+    }
+
+    if (showDeleteConfirm) {
+      setShowDeleteConfirm(false);
       return;
     }
 
@@ -109,10 +130,31 @@ export function ProductSettingsForm({
     }
 
     onClose();
-  }, [isDirty, onClose, saving]);
+  }, [isBusy, isDirty, onClose, showDeleteConfirm]);
+
+  useImperativeHandle(ref, () => ({ requestClose: handleCloseRequest }), [
+    handleCloseRequest,
+  ]);
+
+  const handleDelete = async () => {
+    if (isBusy) {
+      return;
+    }
+
+    setDeleting(true);
+    setError(null);
+
+    const result = await onDelete();
+
+    setDeleting(false);
+
+    if (result.error) {
+      setError(result.error);
+    }
+  };
 
   const handleSubmit = async () => {
-    if (saving) {
+    if (isBusy) {
       return;
     }
 
@@ -172,7 +214,7 @@ export function ProductSettingsForm({
                 cancelNameEdit();
               }
             }}
-            disabled={saving}
+            disabled={isBusy}
             aria-label="Название продукта"
           />
         ) : (
@@ -181,7 +223,7 @@ export function ProductSettingsForm({
             className="product-settings__title product-settings__title-button"
             id="product-settings-title"
             onClick={startEditingName}
-            disabled={saving}
+            disabled={isBusy}
           >
             {name}
           </button>
@@ -190,7 +232,7 @@ export function ProductSettingsForm({
           type="button"
           className="product-settings__close"
           onClick={handleCloseRequest}
-          disabled={saving}
+          disabled={isBusy}
           aria-label="Закрыть"
         >
           ×
@@ -212,7 +254,7 @@ export function ProductSettingsForm({
           className="product-settings__select"
           value={category}
           onChange={(event) => setCategory(event.target.value)}
-          disabled={saving}
+          disabled={isBusy}
         >
           {categoryOptions.map((option) => (
             <option key={option} value={option}>
@@ -235,7 +277,7 @@ export function ProductSettingsForm({
         stores={stores}
         excludedStoreIds={excludedStoreIds}
         onChange={setExcludedStoreIds}
-        disabled={saving}
+        disabled={isBusy}
       />
 
       <div className="product-settings__actions">
@@ -243,7 +285,7 @@ export function ProductSettingsForm({
           type="button"
           className="product-settings__save"
           onClick={() => void handleSubmit()}
-          disabled={saving}
+          disabled={isBusy}
         >
           {saving ? 'Сохранение...' : 'Сохранить'}
         </button>
@@ -251,11 +293,48 @@ export function ProductSettingsForm({
           type="button"
           className="product-settings__cancel"
           onClick={handleCloseRequest}
-          disabled={saving}
+          disabled={isBusy}
         >
           Отмена
         </button>
       </div>
+
+      <div className="product-settings__danger">
+        {!showDeleteConfirm ? (
+          <button
+            type="button"
+            className="product-settings__delete-trigger"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={isBusy}
+          >
+            Удалить продукт
+          </button>
+        ) : (
+          <div className="product-settings__delete-confirm">
+            <p className="product-settings__delete-text">
+              Продукт исчезнет из холодоса и списка покупок. Удалить «{name}»?
+            </p>
+            <div className="product-settings__delete-actions">
+              <button
+                type="button"
+                className="product-settings__delete-submit"
+                onClick={() => void handleDelete()}
+                disabled={isBusy}
+              >
+                {deleting ? 'Удаление...' : 'Удалить'}
+              </button>
+              <button
+                type="button"
+                className="product-settings__delete-cancel"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isBusy}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+});

@@ -28,7 +28,6 @@ interface ProductListProps {
   onRefresh: () => void;
   onAction: (id: string) => Promise<{ error: string | null }>;
   onOtherTabAction: (id: string) => Promise<{ error: string | null }>;
-  onDelete: (id: string) => Promise<{ error: string | null }>;
 }
 
 function resolveCategory(product: Product): ProductCategory {
@@ -124,13 +123,11 @@ function CategorizedProductList({
   showCategoryHeaders,
   variant,
   onAction,
-  onDelete,
 }: {
   products: Product[];
   showCategoryHeaders: boolean;
   variant: 'active' | 'finished';
   onAction: (id: string) => void;
-  onDelete: (id: string) => void;
 }) {
   const entries = buildCategorizedEntries(products, showCategoryHeaders);
 
@@ -148,7 +145,6 @@ function CategorizedProductList({
               variant={variant}
               showMusthaveBadge={entry.product.is_favorite}
               onAction={onAction}
-              onDelete={onDelete}
             />
           </li>
         ),
@@ -164,7 +160,6 @@ function CrossTabResults({
   itemVariant,
   showCategoryHeaders,
   onAction,
-  onDelete,
 }: {
   searchQuery: string;
   sectionLocation: string;
@@ -172,7 +167,6 @@ function CrossTabResults({
   itemVariant: 'active' | 'finished';
   showCategoryHeaders: boolean;
   onAction: (id: string) => void;
-  onDelete: (id: string) => void;
 }) {
   return (
     <section className="product-list__cross-tab" aria-label={sectionLocation}>
@@ -184,7 +178,6 @@ function CrossTabResults({
         showCategoryHeaders={showCategoryHeaders}
         variant={itemVariant}
         onAction={onAction}
-        onDelete={onDelete}
       />
     </section>
   );
@@ -225,7 +218,6 @@ export function ProductList({
   onRefresh,
   onAction,
   onOtherTabAction,
-  onDelete,
 }: ProductListProps) {
   const [selectedCategory, setSelectedCategory] = useState<
     ProductCategory | 'all'
@@ -271,14 +263,6 @@ export function ProductList({
     if (actionErr) {
       setActionError(actionErr);
       return;
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    setActionError(null);
-    const { error: deleteErr } = await onDelete(id);
-    if (deleteErr) {
-      setActionError(deleteErr);
     }
   };
 
@@ -389,7 +373,6 @@ export function ProductList({
       itemVariant={otherTabItemVariant}
       showCategoryHeaders={showCategoryHeaders}
       onAction={handleOtherTabAction}
-      onDelete={handleDelete}
     />
   ) : null;
 
@@ -579,7 +562,6 @@ export function ProductList({
           showCategoryHeaders={showCategoryHeaders}
           variant={variant}
           onAction={handleAction}
-          onDelete={handleDelete}
         />
       )}
 
@@ -629,7 +611,6 @@ export function ProductList({
               showCategoryHeaders={showCategoryHeaders}
               variant={variant}
               onAction={handleAction}
-              onDelete={handleDelete}
             />
           )}
           {otherPlacesExpanded && sortedOtherProducts.length === 0 && (

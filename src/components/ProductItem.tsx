@@ -8,7 +8,6 @@ interface ProductItemProps {
   variant: 'active' | 'finished';
   showMusthaveBadge?: boolean;
   onAction: (id: string) => void;
-  onDelete: (id: string) => void;
 }
 
 export function ProductItem({
@@ -16,7 +15,6 @@ export function ProductItem({
   variant,
   showMusthaveBadge = false,
   onAction,
-  onDelete,
 }: ProductItemProps) {
   const isActive = variant === 'active';
 
@@ -45,14 +43,6 @@ export function ProductItem({
         <p className="product-item__name">{product.name}</p>
       </div>
       {showMusthaveBadge && <MusthaveBadge active />}
-      <button
-        type="button"
-        className="product-item__delete"
-        aria-label="Удалить"
-        onClick={() => onDelete(product.id)}
-      >
-        ×
-      </button>
     </div>
   );
 }
