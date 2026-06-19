@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ProductQueryBar } from '@/components/ProductQueryBar';
 import { ErrorBanner } from '@/components/ErrorBanner';
@@ -6,7 +6,7 @@ import { ProductList } from '@/components/ProductList';
 import { Settings } from '@/components/Settings';
 import { useProducts } from '@/hooks/useProducts';
 import {
-  removeProductTracking,
+  migrateFavoriteProductsFromLocalStorage,
 } from '@/lib/frequentProducts';
 import { supabaseConfigError } from '@/lib/supabase';
 
@@ -19,10 +19,17 @@ export default function App() {
   const [view, setView] = useState<View>('main');
   const [tab, setTab] = useState<Tab>('active');
   const [searchQuery, setSearchQuery] = useState('');
-  const [musthaveRevision, setMusthaveRevision] = useState(0);
 
   const active = useProducts('active');
   const finished = useProducts('finished');
+
+  useEffect(() => {
+    void migrateFavoriteProductsFromLocalStorage().then(() => {
+      void Promise.all([active.refresh(), finished.refresh()]);
+    });
+    // Однократная миграция при старте приложения.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleTabChange = (nextTab: Tab) => {
     setTab(nextTab);
@@ -42,7 +49,6 @@ export default function App() {
 
   const handleBackFromSettings = () => {
     setView('main');
-    setMusthaveRevision((revision) => revision + 1);
     void Promise.all([active.refresh(), finished.refresh()]);
   };
 
@@ -50,7 +56,6 @@ export default function App() {
     const result = await active.deleteProduct(id);
 
     if (!result.error) {
-      removeProductTracking(id);
       await Promise.all([active.refresh(), finished.refresh()]);
     }
 
@@ -164,7 +169,6 @@ export default function App() {
               emptyTitle="Холодильник пуст"
               emptySubtitle="Добавьте первый продукт — молоко, яйца, что угодно"
               searchQuery={searchQuery}
-              musthaveRevision={musthaveRevision}
               onRefresh={active.refresh}
               onAction={handleMarkAsFinished}
               onOtherTabAction={handleOtherTabActionFromActive}
@@ -180,7 +184,6 @@ export default function App() {
             emptyTitle="Пока ничего не закончилось"
             emptySubtitle="Добавьте продукт через поле выше или отметьте «кончилось» на вкладке холодос"
               searchQuery={searchQuery}
-              musthaveRevision={musthaveRevision}
               onRefresh={finished.refresh}
             onAction={handleRestoreProduct}
             onOtherTabAction={handleOtherTabActionFromFinished}

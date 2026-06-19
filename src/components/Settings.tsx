@@ -2,10 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { FrequentStar } from '@/components/FrequentStar';
-import {
-  isProductPinned,
-  toggleProductPin,
-} from '@/lib/frequentProducts';
+import { toggleProductFavorite } from '@/lib/frequentProducts';
 import {
   addCustomCategory,
   deleteCategoryFromConfig,
@@ -35,7 +32,6 @@ export function Settings({ onBack }: SettingsProps) {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
-  const [musthaveRevision, setMusthaveRevision] = useState(0);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -50,7 +46,10 @@ export function Settings({ onBack }: SettingsProps) {
       setError(fetchError.message);
       setProducts([]);
     } else {
-      setProducts(data ?? []);
+      setProducts((data ?? []).map((product) => ({
+        ...product,
+        is_favorite: product.is_favorite ?? false,
+      })));
     }
 
     setLoading(false);
@@ -86,15 +85,23 @@ export function Settings({ onBack }: SettingsProps) {
     [products],
   );
 
-  const handleToggleFrequent = (productId: string) => {
-    const { error: toggleError } = toggleProductPin(productId);
+  const handleToggleFrequent = async (product: Product) => {
+    const { isFavorite, error: toggleError } = await toggleProductFavorite(
+      product.id,
+      product.is_favorite,
+    );
+
     if (toggleError) {
       setError(toggleError);
       return;
     }
 
     setError(null);
-    setMusthaveRevision((revision) => revision + 1);
+    setProducts((current) =>
+      current.map((item) =>
+        item.id === product.id ? { ...item, is_favorite: isFavorite } : item,
+      ),
+    );
   };
 
   const handleCategoryChange = async (productId: string, newCategory: string) => {
@@ -261,16 +268,13 @@ export function Settings({ onBack }: SettingsProps) {
               <p className="settings__empty-list">Пока нет продуктов</p>
             ) : (
               <ul className="settings__items">
-                {sortedProducts.map((product) => {
-                  void musthaveRevision;
-
-                  return (
+                {sortedProducts.map((product) => (
                   <li key={product.id} className="settings__item">
                     <span className="settings__item-name">{product.name}</span>
                     <FrequentStar
-                      active={isProductPinned(product.id)}
+                      active={product.is_favorite}
                       interactive
-                      onToggle={() => handleToggleFrequent(product.id)}
+                      onToggle={() => void handleToggleFrequent(product)}
                     />
                     <select
                       className="settings__item-category"
@@ -287,8 +291,7 @@ export function Settings({ onBack }: SettingsProps) {
                       ))}
                     </select>
                   </li>
-                  );
-                })}
+                ))}
               </ul>
             )}
           </section>

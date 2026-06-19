@@ -18,6 +18,7 @@ export interface Product {
   name: string;
   status: ProductStatus;
   category: ProductCategory;
+  is_favorite: boolean;
   created_at: string;
   finished_at: string | null;
 }

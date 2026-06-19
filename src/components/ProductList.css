@@ -99,6 +99,12 @@
   color: #fff;
 }
 
+.product-list__filter--frequent.product-list__filter--active {
+  background: linear-gradient(180deg, #fff9df 0%, #ffeaa0 100%);
+  border-color: #e3c038;
+  color: #8a6a00;
+}
+
 .product-list__filter:hover:not(.product-list__filter--active) {
   border-color: #1b7fc4;
   color: #1b7fc4;
@@ -160,19 +166,6 @@
 
 .product-list__centered--compact {
   padding: 24px;
-}
-
-.product-list__frequent {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #d4e4f0;
-}
-
-.product-list__frequent-heading {
-  margin: 0 0 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #1a2b3c;
 }
 
 .product-list__cross-tab {

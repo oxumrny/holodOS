@@ -24,8 +24,8 @@ export function FrequentStar({
       <button
         type="button"
         className={className}
-        aria-label={active ? 'Убрать из частых' : 'Закрепить в частых'}
-        title={active ? 'Убрать из частых' : 'Закрепить в частых'}
+        aria-label={active ? 'Убрать из мастхэв' : 'Добавить в мастхэв'}
+        title={active ? 'Убрать из мастхэв' : 'Добавить в мастхэв'}
         onClick={onToggle}
       >
         ★

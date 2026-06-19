@@ -1,114 +1,73 @@
-const PINNED_KEY = 'holodos-pinned-products';
-const ACTIVITY_KEY = 'holodos-product-activity';
+import { supabase } from '@/lib/supabase';
+
+const LEGACY_PINNED_KEY = 'holodos-pinned-products';
+const LEGACY_ACTIVITY_KEY = 'holodos-product-activity';
+const PINNED_MIGRATION_KEY = 'holodos-pinned-migrated';
 
 export const MAX_FREQUENT = 8;
-const MIN_AUTO_COUNT = 2;
 
-interface ActivityEntry {
-  count: number;
-  lastAt: number;
-}
+export async function migrateFavoriteProductsFromLocalStorage(): Promise<void> {
+  if (localStorage.getItem(PINNED_MIGRATION_KEY)) {
+    localStorage.removeItem(LEGACY_ACTIVITY_KEY);
+    return;
+  }
 
-function readPinned(): string[] {
+  let pinnedIds: string[] = [];
+
   try {
-    const stored = localStorage.getItem(PINNED_KEY);
-    return stored ? (JSON.parse(stored) as string[]) : [];
+    const stored = localStorage.getItem(LEGACY_PINNED_KEY);
+    pinnedIds = stored ? (JSON.parse(stored) as string[]) : [];
   } catch {
-    return [];
-  }
-}
-
-function writePinned(ids: string[]): void {
-  localStorage.setItem(PINNED_KEY, JSON.stringify(ids));
-}
-
-function readActivity(): Record<string, ActivityEntry> {
-  try {
-    const stored = localStorage.getItem(ACTIVITY_KEY);
-    return stored ? (JSON.parse(stored) as Record<string, ActivityEntry>) : {};
-  } catch {
-    return {};
-  }
-}
-
-function writeActivity(activity: Record<string, ActivityEntry>): void {
-  localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity));
-}
-
-export function recordProductActivity(productId: string): void {
-  const activity = readActivity();
-  const entry = activity[productId] ?? { count: 0, lastAt: 0 };
-
-  activity[productId] = {
-    count: entry.count + 1,
-    lastAt: Date.now(),
-  };
-
-  writeActivity(activity);
-}
-
-export function removeProductTracking(productId: string): void {
-  const activity = readActivity();
-  delete activity[productId];
-  writeActivity(activity);
-  writePinned(readPinned().filter((id) => id !== productId));
-}
-
-export function isProductPinned(productId: string): boolean {
-  return readPinned().includes(productId);
-}
-
-export function toggleProductPin(
-  productId: string,
-): { isPinned: boolean; error: string | null } {
-  const pinned = readPinned();
-  const index = pinned.indexOf(productId);
-
-  if (index >= 0) {
-    pinned.splice(index, 1);
-    writePinned(pinned);
-    return { isPinned: false, error: null };
+    pinnedIds = [];
   }
 
-  if (pinned.length >= MAX_FREQUENT) {
-    return {
-      isPinned: false,
-      error: `Можно закрепить не больше ${MAX_FREQUENT} продуктов`,
-    };
-  }
+  if (pinnedIds.length > 0) {
+    const { error } = await supabase
+      .from('products')
+      .update({ is_favorite: true })
+      .in('id', pinnedIds);
 
-  writePinned([productId, ...pinned]);
-  return { isPinned: true, error: null };
-}
-
-export function getFrequentProductIds(availableIds: string[]): string[] {
-  const available = new Set(availableIds);
-  const pinned = readPinned().filter((id) => available.has(id));
-  const activity = readActivity();
-
-  const autoCandidates = Object.entries(activity)
-    .filter(
-      ([id, entry]) =>
-        available.has(id) &&
-        entry.count >= MIN_AUTO_COUNT &&
-        !pinned.includes(id),
-    )
-    .sort((a, b) => {
-      if (b[1].count !== a[1].count) {
-        return b[1].count - a[1].count;
-      }
-
-      return b[1].lastAt - a[1].lastAt;
-    })
-    .map(([id]) => id);
-
-  const merged: string[] = [];
-
-  for (const id of [...pinned, ...autoCandidates]) {
-    if (!merged.includes(id) && merged.length < MAX_FREQUENT) {
-      merged.push(id);
+    if (error) {
+      console.error('Не удалось перенести избранное из localStorage:', error.message);
+      return;
     }
   }
 
-  return merged;
+  localStorage.removeItem(LEGACY_PINNED_KEY);
+  localStorage.removeItem(LEGACY_ACTIVITY_KEY);
+  localStorage.setItem(PINNED_MIGRATION_KEY, '1');
+}
+
+export async function toggleProductFavorite(
+  productId: string,
+  isCurrentlyFavorite: boolean,
+): Promise<{ isFavorite: boolean; error: string | null }> {
+  if (!isCurrentlyFavorite) {
+    const { count, error: countError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_favorite', true);
+
+    if (countError) {
+      return { isFavorite: false, error: countError.message };
+    }
+
+    if ((count ?? 0) >= MAX_FREQUENT) {
+      return {
+        isFavorite: false,
+        error: `Можно добавить не больше ${MAX_FREQUENT} мастхэв-продуктов`,
+      };
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from('products')
+    .update({ is_favorite: !isCurrentlyFavorite })
+    .eq('id', productId);
+
+  if (updateError) {
+    return { isFavorite: isCurrentlyFavorite, error: updateError.message };
+  }
+
+  return { isFavorite: !isCurrentlyFavorite, error: null };
 }

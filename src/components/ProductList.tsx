@@ -2,10 +2,6 @@ import { useMemo, useState } from 'react';
 
 import { getAllCategories } from '@/lib/categoryConfig';
 import {
-  getFrequentProductIds,
-  recordProductActivity,
-} from '@/lib/frequentProducts';
-import {
   filterProductsBySearch,
   normalizeSearchQuery,
 } from '@/lib/productSearch';
@@ -24,7 +20,6 @@ interface ProductListProps {
   emptyTitle: string;
   emptySubtitle: string;
   searchQuery: string;
-  musthaveRevision: number;
   onRefresh: () => void;
   onAction: (id: string) => Promise<{ error: string | null }>;
   onOtherTabAction: (id: string) => Promise<{ error: string | null }>;
@@ -95,6 +90,7 @@ function CategorizedProductList({
             <ProductItem
               product={entry.product}
               variant={variant}
+              showMusthaveBadge={entry.product.is_favorite}
               onAction={onAction}
               onDelete={onDelete}
             />
@@ -102,37 +98,6 @@ function CategorizedProductList({
         ),
       )}
     </ul>
-  );
-}
-
-function FrequentProductList({
-  products,
-  variant,
-  onAction,
-  onDelete,
-}: {
-  products: Product[];
-  variant: 'active' | 'finished';
-  onAction: (id: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  return (
-    <section className="product-list__frequent" aria-label="Часто используемые">
-      <h2 className="product-list__frequent-heading">Часто</h2>
-      <ul className="product-list__items">
-        {products.map((product) => (
-          <li key={product.id}>
-            <ProductItem
-              product={product}
-              variant={variant}
-              showMusthaveBadge
-              onAction={onAction}
-              onDelete={onDelete}
-            />
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -197,7 +162,6 @@ export function ProductList({
   emptyTitle,
   emptySubtitle,
   searchQuery,
-  musthaveRevision,
   onRefresh,
   onAction,
   onOtherTabAction,
@@ -206,14 +170,21 @@ export function ProductList({
   const [selectedCategory, setSelectedCategory] = useState<
     ProductCategory | 'all'
   >('all');
+  const [frequentOnly, setFrequentOnly] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [frequentRevision, setFrequentRevision] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleCategorySelect = (category: ProductCategory | 'all') => {
     setSelectedCategory(category);
     setFiltersExpanded(false);
   };
+
+  const handleFrequentFilterSelect = (enabled: boolean) => {
+    setFrequentOnly(enabled);
+    setFiltersExpanded(false);
+  };
+
+  const filterApplied = selectedCategory !== 'all' || frequentOnly;
 
   const handleAction = async (id: string) => {
     setActionError(null);
@@ -222,9 +193,6 @@ export function ProductList({
       setActionError(actionErr);
       return;
     }
-
-    recordProductActivity(id);
-    setFrequentRevision((revision) => revision + 1);
   };
 
   const handleOtherTabAction = async (id: string) => {
@@ -234,9 +202,6 @@ export function ProductList({
       setActionError(actionErr);
       return;
     }
-
-    recordProductActivity(id);
-    setFrequentRevision((revision) => revision + 1);
   };
 
   const handleDelete = async (id: string) => {
@@ -259,6 +224,11 @@ export function ProductList({
     return categoryOrder.filter((category) => present.has(category));
   }, [products, categoryOrder]);
 
+  const hasFavorites = useMemo(
+    () => products.some((product) => product.is_favorite),
+    [products],
+  );
+
   const normalizedSearch = normalizeSearchQuery(searchQuery);
   const otherTabSectionLocation =
     variant === 'active' ? 'в списке покупок' : 'в холодосе';
@@ -267,6 +237,10 @@ export function ProductList({
   const filteredProducts = useMemo(() => {
     let result = products;
 
+    if (frequentOnly) {
+      result = result.filter((product) => product.is_favorite);
+    }
+
     if (selectedCategory !== 'all') {
       result = result.filter(
         (product) => resolveCategory(product) === selectedCategory,
@@ -274,10 +248,14 @@ export function ProductList({
     }
 
     return filterProductsBySearch(result, normalizedSearch);
-  }, [products, selectedCategory, normalizedSearch]);
+  }, [products, selectedCategory, frequentOnly, normalizedSearch]);
 
   const filteredOtherTabProducts = useMemo(() => {
     let result = filterProductsBySearch(otherTabProducts, normalizedSearch);
+
+    if (frequentOnly) {
+      result = result.filter((product) => product.is_favorite);
+    }
 
     if (selectedCategory !== 'all') {
       result = result.filter(
@@ -288,7 +266,7 @@ export function ProductList({
     return [...result].sort((a, b) =>
       a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' }),
     );
-  }, [otherTabProducts, normalizedSearch, selectedCategory]);
+  }, [otherTabProducts, normalizedSearch, selectedCategory, frequentOnly]);
 
   const sortedByCategory = useMemo(() => {
     const categoryIndex = new Map(
@@ -306,22 +284,6 @@ export function ProductList({
       return a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
     });
   }, [filteredProducts, categoryOrder]);
-
-  const frequentProductIds = useMemo(
-    () => getFrequentProductIds(products.map((product) => product.id)),
-    [products, musthaveRevision, frequentRevision],
-  );
-
-  const { frequentProducts, mainProducts } = useMemo(() => {
-    const byId = new Map(sortedByCategory.map((product) => [product.id, product]));
-    const frequent = frequentProductIds
-      .map((id) => byId.get(id))
-      .filter((product): product is Product => product !== undefined);
-    const frequentSet = new Set(frequent.map((product) => product.id));
-    const main = sortedByCategory.filter((product) => !frequentSet.has(product.id));
-
-    return { frequentProducts: frequent, mainProducts: main };
-  }, [sortedByCategory, frequentProductIds]);
 
   const showCategoryHeaders = selectedCategory === 'all';
 
@@ -385,24 +347,42 @@ export function ProductList({
           onDismiss={() => setActionError(null)}
         />
       )}
-      {products.length > 0 && availableCategories.length > 0 && (
+      {products.length > 0 && (
         <div className="product-list__filters-panel">
           <div className="product-list__filters-bar">
             <button
               type="button"
-              className={`product-list__filters-button ${filtersExpanded ? 'product-list__filters-button--expanded' : ''} ${selectedCategory !== 'all' ? 'product-list__filters-button--applied' : ''}`}
+              className={`product-list__filters-button ${filtersExpanded ? 'product-list__filters-button--expanded' : ''} ${filterApplied ? 'product-list__filters-button--applied' : ''}`}
               aria-expanded={filtersExpanded}
               aria-controls="product-category-filters"
               aria-label={
-                selectedCategory !== 'all'
-                  ? `Фильтр: ${selectedCategory}`
-                  : 'Фильтр по категориям'
+                filterApplied
+                  ? frequentOnly && selectedCategory !== 'all'
+                    ? `Фильтры: Мастхэв, ${selectedCategory}`
+                    : frequentOnly
+                      ? 'Фильтр: Мастхэв'
+                      : `Фильтр: ${selectedCategory}`
+                  : 'Фильтры'
               }
-              title="Фильтр по категориям"
+              title="Фильтры"
               onClick={() => setFiltersExpanded((expanded) => !expanded)}
             >
               <FilterIcon />
             </button>
+            {frequentOnly && (
+              <button
+                type="button"
+                className="product-list__filters-active"
+                onClick={() => handleFrequentFilterSelect(false)}
+                aria-label="Сбросить фильтр: Мастхэв"
+                title="Сбросить: Мастхэв"
+              >
+                <span className="product-list__filters-active-label">Мастхэв</span>
+                <span className="product-list__filters-active-clear" aria-hidden>
+                  ×
+                </span>
+              </button>
+            )}
             {selectedCategory !== 'all' && (
               <button
                 type="button"
@@ -424,15 +404,27 @@ export function ProductList({
             <div
               id="product-category-filters"
               className="product-list__filters"
-              aria-label="Фильтр по категориям"
+              aria-label="Фильтры"
             >
               <button
                 type="button"
-                className={`product-list__filter ${selectedCategory === 'all' ? 'product-list__filter--active' : ''}`}
-                onClick={() => handleCategorySelect('all')}
+                className={`product-list__filter ${!frequentOnly && selectedCategory === 'all' ? 'product-list__filter--active' : ''}`}
+                onClick={() => {
+                  handleFrequentFilterSelect(false);
+                  handleCategorySelect('all');
+                }}
               >
                 Все
               </button>
+              {hasFavorites && (
+                <button
+                  type="button"
+                  className={`product-list__filter product-list__filter--frequent ${frequentOnly ? 'product-list__filter--active' : ''}`}
+                  onClick={() => handleFrequentFilterSelect(true)}
+                >
+                  Мастхэв
+                </button>
+              )}
               {availableCategories.map((category) => (
                 <button
                   key={category}
@@ -448,18 +440,9 @@ export function ProductList({
         </div>
       )}
 
-      {frequentProducts.length > 0 && (
-        <FrequentProductList
-          products={frequentProducts}
-          variant={variant}
-          onAction={handleAction}
-          onDelete={handleDelete}
-        />
-      )}
-
-      {mainProducts.length > 0 && (
+      {sortedByCategory.length > 0 && (
         <CategorizedProductList
-          products={mainProducts}
+          products={sortedByCategory}
           showCategoryHeaders={showCategoryHeaders}
           variant={variant}
           onAction={handleAction}
@@ -474,7 +457,13 @@ export function ProductList({
             <p className="product-list__empty-subtitle">
               {normalizedSearch
                 ? `Ничего не найдено по запросу «${searchQuery.trim()}»`
-                : `В категории «${selectedCategory}» пока ничего нет`}
+                : frequentOnly && selectedCategory !== 'all'
+                  ? `В «Мастхэв» в категории «${selectedCategory}» пока ничего нет`
+                  : frequentOnly
+                    ? 'Нет избранных продуктов на этой вкладке'
+                    : selectedCategory !== 'all'
+                      ? `В категории «${selectedCategory}» пока ничего нет`
+                      : emptySubtitle}
             </p>
           </div>
         )}

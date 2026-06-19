@@ -5,6 +5,13 @@ import { detectCategory } from '@/lib/detectCategory';
 import { supabase } from '@/lib/supabase';
 import type { Product, ProductStatus } from '@/types/product';
 
+function normalizeProduct(product: Product): Product {
+  return {
+    ...product,
+    is_favorite: product.is_favorite ?? false,
+  };
+}
+
 export function useProducts(status: ProductStatus) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +35,7 @@ export function useProducts(status: ProductStatus) {
       setError(fetchError.message);
       setProducts([]);
     } else {
-      setProducts(data ?? []);
+      setProducts((data ?? []).map(normalizeProduct));
     }
 
     setLoading(false);
