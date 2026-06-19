@@ -32,6 +32,84 @@
   color: #5a6b7c;
 }
 
+.settings__hub {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings__hub-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.settings__hub-tile:hover {
+  border-color: #1b7fc4;
+  background: #f8fcff;
+}
+
+.settings__hub-tile-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2b3c;
+}
+
+.settings__hub-tile-count {
+  font-size: 14px;
+  color: #8a9bab;
+}
+
+.settings__modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(26, 43, 60, 0.45);
+}
+
+.settings__modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  box-shadow: 0 -8px 32px rgba(26, 43, 60, 0.18);
+}
+
+.settings__modal-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+@media (min-width: 481px) {
+  .settings__modal-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .settings__modal {
+    border-radius: 16px;
+    max-height: 85vh;
+  }
+}
+
 .settings__toolbar {
   margin-bottom: 16px;
 }
@@ -183,6 +261,12 @@
 .settings__product-button:hover {
   border-color: #1b7fc4;
   background: #f8fcff;
+}
+
+.settings__product-button--highlighted {
+  border-color: #1b7fc4;
+  background: #e3f2fb;
+  box-shadow: 0 0 0 2px rgba(27, 127, 196, 0.15);
 }
 
 .settings__product-button-name {

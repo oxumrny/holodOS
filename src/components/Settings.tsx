@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import { ErrorBanner } from '@/components/ErrorBanner';
 import {
@@ -31,8 +31,34 @@ interface SettingsProps {
   onBack: () => void;
 }
 
+type SettingsSection = 'hub' | 'products' | 'stores' | 'categories';
+
 function resolveCategory(product: Product): string {
   return product.category ?? 'прочее';
+}
+
+function pluralize(
+  count: number,
+  one: string,
+  few: string,
+  many: string,
+): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod100 >= 11 && mod100 <= 14) {
+    return many;
+  }
+
+  if (mod10 === 1) {
+    return one;
+  }
+
+  if (mod10 >= 2 && mod10 <= 4) {
+    return few;
+  }
+
+  return many;
 }
 
 export function Settings({ onBack }: SettingsProps) {
@@ -61,10 +87,15 @@ export function Settings({ onBack }: SettingsProps) {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
+  const [section, setSection] = useState<SettingsSection>('hub');
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingExclusions, setEditingExclusions] = useState<string[]>([]);
   const [loadingExclusions, setLoadingExclusions] = useState(false);
+  const [highlightedProductId, setHighlightedProductId] = useState<string | null>(
+    null,
+  );
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -91,6 +122,40 @@ export function Settings({ onBack }: SettingsProps) {
   useEffect(() => {
     void fetchProducts();
   }, [fetchProducts]);
+
+  useEffect(() => {
+    if (!editingProduct) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [editingProduct]);
+
+  useEffect(
+    () => () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  const highlightProduct = (productId: string) => {
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current);
+    }
+
+    setHighlightedProductId(productId);
+    highlightTimeoutRef.current = setTimeout(() => {
+      setHighlightedProductId(null);
+      highlightTimeoutRef.current = null;
+    }, 2000);
+  };
 
   const bumpCategories = () => {
     setCategoryRevision((revision) => revision + 1);
@@ -155,6 +220,36 @@ export function Settings({ onBack }: SettingsProps) {
       return { error: 'Продукт не выбран' };
     }
 
+    const normalizedName = values.name.trim().toLowerCase();
+
+    if (!normalizedName) {
+      return { error: 'Введите название продукта' };
+    }
+
+    if (normalizedName !== editingProduct.name) {
+      const { data: existingProduct, error: lookupError } = await supabase
+        .from('products')
+        .select('id, status, name')
+        .ilike('name', normalizedName)
+        .neq('id', editingProduct.id)
+        .maybeSingle();
+
+      if (lookupError) {
+        return { error: lookupError.message };
+      }
+
+      if (existingProduct) {
+        const location =
+          existingProduct.status === 'active'
+            ? 'в холодосе'
+            : 'в списке покупок';
+
+        return {
+          error: `«${existingProduct.name}» уже ${location}`,
+        };
+      }
+    }
+
     if (
       values.isFavorite &&
       !editingProduct.is_favorite
@@ -178,6 +273,7 @@ export function Settings({ onBack }: SettingsProps) {
     const { error: updateError } = await supabase
       .from('products')
       .update({
+        name: normalizedName,
         category: values.category,
         is_favorite: values.isFavorite,
       })
@@ -197,7 +293,9 @@ export function Settings({ onBack }: SettingsProps) {
     }
 
     await fetchProducts();
+    const savedProductId = editingProduct.id;
     closeProductSettings();
+    highlightProduct(savedProductId);
     return { error: null };
   };
 
@@ -361,14 +459,442 @@ export function Settings({ onBack }: SettingsProps) {
 
   const isLoading = loading || storesLoading;
 
+  const goToHub = () => {
+    setSection('hub');
+    setProductSearchQuery('');
+    setShowAddStore(false);
+    setNewStoreName('');
+    setEditingStoreId(null);
+    setConfirmDeleteStoreId(null);
+    setShowAddCategory(false);
+    setNewCategoryName('');
+    setEditingCategory(null);
+  };
+
+  const openSection = (nextSection: Exclude<SettingsSection, 'hub'>) => {
+    setSection(nextSection);
+  };
+
+  const handleTopBack = () => {
+    if (section !== 'hub') {
+      goToHub();
+      return;
+    }
+
+    onBack();
+  };
+
+  const topBackLabel = section !== 'hub' ? '← Настройки' : '← Назад';
+
+  const sectionTitle =
+    section === 'products'
+      ? 'Продукты'
+      : section === 'stores'
+        ? 'Магазины'
+        : section === 'categories'
+          ? 'Категории'
+          : 'Настройки';
+
+  const sectionSubtitle =
+    section === 'hub'
+      ? 'Выберите раздел для редактирования'
+      : section === 'products'
+        ? 'Нажмите на продукт, чтобы настроить категорию и магазины'
+        : section === 'stores'
+          ? 'Ваши точки для списка покупок. Стрелками ↑ ↓ задайте порядок.'
+          : 'Стрелками ↑ ↓ задайте порядок категорий на главных вкладках';
+
+  const renderHub = () => (
+    <div className="settings__hub">
+      <button
+        type="button"
+        className="settings__hub-tile"
+        onClick={() => openSection('products')}
+      >
+        <span className="settings__hub-tile-title">Продукты</span>
+        <span className="settings__hub-tile-count">
+          {products.length}{' '}
+          {pluralize(products.length, 'продукт', 'продукта', 'продуктов')}
+        </span>
+      </button>
+      <button
+        type="button"
+        className="settings__hub-tile"
+        onClick={() => openSection('stores')}
+      >
+        <span className="settings__hub-tile-title">Магазины</span>
+        <span className="settings__hub-tile-count">
+          {stores.length}{' '}
+          {pluralize(stores.length, 'магазин', 'магазина', 'магазинов')}
+        </span>
+      </button>
+      <button
+        type="button"
+        className="settings__hub-tile"
+        onClick={() => openSection('categories')}
+      >
+        <span className="settings__hub-tile-title">Категории</span>
+        <span className="settings__hub-tile-count">
+          {categoryOptions.length}{' '}
+          {pluralize(
+            categoryOptions.length,
+            'категория',
+            'категории',
+            'категорий',
+          )}
+        </span>
+      </button>
+    </div>
+  );
+
+  const renderStoresSection = () => (
+    <section className="settings__section">
+      {!showAddStore ? (
+        <button
+          type="button"
+          className="settings__add-category"
+          onClick={() => setShowAddStore(true)}
+        >
+          + Добавить магазин
+        </button>
+      ) : (
+        <form className="settings__add-form" onSubmit={handleAddStore}>
+          <input
+            className="settings__add-input"
+            placeholder="Название магазина"
+            value={newStoreName}
+            onChange={(event) => setNewStoreName(event.target.value)}
+            autoFocus
+          />
+          <button type="submit" className="settings__add-submit">
+            Добавить
+          </button>
+          <button
+            type="button"
+            className="settings__add-cancel"
+            onClick={() => {
+              setShowAddStore(false);
+              setNewStoreName('');
+            }}
+          >
+            Отмена
+          </button>
+        </form>
+      )}
+
+      {stores.length === 0 ? (
+        <p className="settings__empty-list">Пока нет магазинов</p>
+      ) : (
+        <ul className="settings__category-list settings__store-list">
+          {stores.map((store, index) => (
+            <li key={store.id} className="settings__category-row">
+              {editingStoreId === store.id ? (
+                <form
+                  className="settings__category-edit"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void handleRenameStore(store.id, store.name);
+                  }}
+                >
+                  <input
+                    className="settings__category-input"
+                    value={editStoreName}
+                    onChange={(event) =>
+                      setEditStoreName(event.target.value)
+                    }
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="settings__category-save"
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    type="button"
+                    className="settings__category-cancel"
+                    onClick={cancelRenameStore}
+                  >
+                    Отмена
+                  </button>
+                </form>
+              ) : confirmDeleteStoreId === store.id ? (
+                <div className="settings__confirm-delete">
+                  <span className="settings__confirm-delete-text">
+                    Удалить «{store.name}»?
+                  </span>
+                  <div className="settings__category-actions">
+                    <button
+                      type="button"
+                      className="settings__category-save"
+                      onClick={() => void handleDeleteStore(store.id)}
+                    >
+                      Удалить
+                    </button>
+                    <button
+                      type="button"
+                      className="settings__category-cancel"
+                      onClick={() => setConfirmDeleteStoreId(null)}
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="settings__category-order">
+                    <button
+                      type="button"
+                      className="settings__category-move"
+                      aria-label={`Поднять магазин ${store.name}`}
+                      disabled={index === 0}
+                      onClick={() => void handleMoveStore(store.id, 'up')}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      className="settings__category-move"
+                      aria-label={`Опустить магазин ${store.name}`}
+                      disabled={index === stores.length - 1}
+                      onClick={() => void handleMoveStore(store.id, 'down')}
+                    >
+                      ↓
+                    </button>
+                  </div>
+                  <span className="settings__category-name">{store.name}</span>
+                  <div className="settings__category-actions">
+                    <button
+                      type="button"
+                      className="settings__category-rename"
+                      onClick={() => startRenameStore(store.id, store.name)}
+                    >
+                      Переименовать
+                    </button>
+                    <button
+                      type="button"
+                      className="settings__category-delete"
+                      aria-label={`Удалить магазин ${store.name}`}
+                      onClick={() => {
+                        setConfirmDeleteStoreId(store.id);
+                        setEditingStoreId(null);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+
+  const renderProductsSection = () => (
+    <section className="settings__section">
+      {sortedProducts.length > 0 && (
+        <input
+          type="search"
+          className="settings__search-input"
+          placeholder="Поиск по названию"
+          value={productSearchQuery}
+          onChange={(event) => setProductSearchQuery(event.target.value)}
+        />
+      )}
+
+      {sortedProducts.length === 0 ? (
+        <p className="settings__empty-list">Пока нет продуктов</p>
+      ) : filteredProducts.length === 0 ? (
+        <p className="settings__empty-list">Ничего не найдено</p>
+      ) : (
+        <ul className="settings__items">
+          {filteredProducts.map((product) => (
+            <li key={product.id}>
+              <button
+                type="button"
+                className={`settings__product-button${
+                  highlightedProductId === product.id
+                    ? ' settings__product-button--highlighted'
+                    : ''
+                }`}
+                onClick={() => void openProductSettings(product)}
+              >
+                <span className="settings__product-button-name">
+                  {product.name}
+                </span>
+                <span className="settings__product-button-meta">
+                  {resolveCategory(product)}
+                  {product.is_favorite ? ' · ★' : ''}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+
+  const renderCategoriesSection = () => (
+    <section className="settings__section">
+      {!showAddCategory ? (
+        <button
+          type="button"
+          className="settings__add-category"
+          onClick={() => setShowAddCategory(true)}
+        >
+          + Добавить категорию
+        </button>
+      ) : (
+        <form className="settings__add-form" onSubmit={handleAddCategory}>
+          <input
+            className="settings__add-input"
+            placeholder="Название категории"
+            value={newCategoryName}
+            onChange={(event) => setNewCategoryName(event.target.value)}
+            autoFocus
+          />
+          <button type="submit" className="settings__add-submit">
+            Добавить
+          </button>
+          <button
+            type="button"
+            className="settings__add-cancel"
+            onClick={() => {
+              setShowAddCategory(false);
+              setNewCategoryName('');
+            }}
+          >
+            Отмена
+          </button>
+        </form>
+      )}
+
+      <ul className="settings__category-list">
+        {categoryOptions.map((category, index) => (
+          <li key={category} className="settings__category-row">
+            {editingCategory === category ? (
+              <form
+                className="settings__category-edit"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleRenameCategory(category);
+                }}
+              >
+                <input
+                  className="settings__category-input"
+                  value={editCategoryName}
+                  onChange={(event) =>
+                    setEditCategoryName(event.target.value)
+                  }
+                  autoFocus
+                />
+                <button type="submit" className="settings__category-save">
+                  Сохранить
+                </button>
+                <button
+                  type="button"
+                  className="settings__category-cancel"
+                  onClick={cancelRenameCategory}
+                >
+                  Отмена
+                </button>
+              </form>
+            ) : (
+              <>
+                <div className="settings__category-order">
+                  <button
+                    type="button"
+                    className="settings__category-move"
+                    aria-label={`Поднять категорию ${category}`}
+                    disabled={index === 0}
+                    onClick={() => handleMoveCategory(category, 'up')}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="settings__category-move"
+                    aria-label={`Опустить категорию ${category}`}
+                    disabled={index === categoryOptions.length - 1}
+                    onClick={() => handleMoveCategory(category, 'down')}
+                  >
+                    ↓
+                  </button>
+                </div>
+                <span className="settings__category-name">{category}</span>
+                <div className="settings__category-actions">
+                  <button
+                    type="button"
+                    className="settings__category-rename"
+                    onClick={() => startRenameCategory(category)}
+                  >
+                    Переименовать
+                  </button>
+                  {category !== 'прочее' && (
+                    <button
+                      type="button"
+                      className="settings__category-delete"
+                      aria-label={`Удалить категорию ${category}`}
+                      onClick={() => void handleDeleteCategory(category)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+
+  const renderProductSettingsModal = () => {
+    if (!editingProduct) {
+      return null;
+    }
+
+    return (
+      <div className="settings__modal-overlay">
+        <div
+          className="settings__modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="product-settings-title"
+        >
+          {loadingExclusions ? (
+            <div className="settings__modal-loading">
+              <div className="settings__spinner" aria-label="Загрузка" />
+            </div>
+          ) : (
+            <ProductSettingsForm
+              stores={stores}
+              categoryOptions={categoryOptions}
+              initialValues={{
+                name: editingProduct.name,
+                category: resolveCategory(editingProduct),
+                isFavorite: editingProduct.is_favorite,
+                excludedStoreIds: editingExclusions,
+              }}
+              onSave={handleSaveProductSettings}
+              onClose={closeProductSettings}
+            />
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="settings">
       <div className="settings__top">
-        <button type="button" className="settings__back" onClick={onBack}>
-          ← Назад
+        <button type="button" className="settings__back" onClick={handleTopBack}>
+          {topBackLabel}
         </button>
-        <h2 className="settings__title">Настройки</h2>
-        <p className="settings__subtitle">Магазины, категории и продукты</p>
+        <h2 className="settings__title">{sectionTitle}</h2>
+        <p className="settings__subtitle">{sectionSubtitle}</p>
       </div>
 
       {displayError && (
@@ -385,348 +911,17 @@ export function Settings({ onBack }: SettingsProps) {
         <div className="settings__centered">
           <div className="settings__spinner" aria-label="Загрузка" />
         </div>
-      ) : editingProduct ? (
-        loadingExclusions ? (
-          <div className="settings__centered">
-            <div className="settings__spinner" aria-label="Загрузка" />
-          </div>
-        ) : (
-          <ProductSettingsForm
-            product={editingProduct}
-            stores={stores}
-            categoryOptions={categoryOptions}
-            initialValues={{
-              category: resolveCategory(editingProduct),
-              isFavorite: editingProduct.is_favorite,
-              excludedStoreIds: editingExclusions,
-            }}
-            onSave={handleSaveProductSettings}
-            onCancel={closeProductSettings}
-          />
-        )
+      ) : section === 'hub' ? (
+        renderHub()
+      ) : section === 'stores' ? (
+        renderStoresSection()
+      ) : section === 'products' ? (
+        renderProductsSection()
       ) : (
-        <>
-          <section className="settings__section">
-            <h3 className="settings__section-title">Магазины</h3>
-            <p className="settings__section-hint">
-              Ваши точки для списка покупок. Стрелками ↑ ↓ задайте порядок.
-            </p>
-
-            {!showAddStore ? (
-              <button
-                type="button"
-                className="settings__add-category"
-                onClick={() => setShowAddStore(true)}
-              >
-                + Добавить магазин
-              </button>
-            ) : (
-              <form className="settings__add-form" onSubmit={handleAddStore}>
-                <input
-                  className="settings__add-input"
-                  placeholder="Название магазина"
-                  value={newStoreName}
-                  onChange={(event) => setNewStoreName(event.target.value)}
-                  autoFocus
-                />
-                <button type="submit" className="settings__add-submit">
-                  Добавить
-                </button>
-                <button
-                  type="button"
-                  className="settings__add-cancel"
-                  onClick={() => {
-                    setShowAddStore(false);
-                    setNewStoreName('');
-                  }}
-                >
-                  Отмена
-                </button>
-              </form>
-            )}
-
-            {stores.length === 0 ? (
-              <p className="settings__empty-list">Пока нет магазинов</p>
-            ) : (
-              <ul className="settings__category-list settings__store-list">
-                {stores.map((store, index) => (
-                  <li key={store.id} className="settings__category-row">
-                    {editingStoreId === store.id ? (
-                      <form
-                        className="settings__category-edit"
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          void handleRenameStore(store.id, store.name);
-                        }}
-                      >
-                        <input
-                          className="settings__category-input"
-                          value={editStoreName}
-                          onChange={(event) =>
-                            setEditStoreName(event.target.value)
-                          }
-                          autoFocus
-                        />
-                        <button
-                          type="submit"
-                          className="settings__category-save"
-                        >
-                          Сохранить
-                        </button>
-                        <button
-                          type="button"
-                          className="settings__category-cancel"
-                          onClick={cancelRenameStore}
-                        >
-                          Отмена
-                        </button>
-                      </form>
-                    ) : confirmDeleteStoreId === store.id ? (
-                      <div className="settings__confirm-delete">
-                        <span className="settings__confirm-delete-text">
-                          Удалить «{store.name}»?
-                        </span>
-                        <div className="settings__category-actions">
-                          <button
-                            type="button"
-                            className="settings__category-save"
-                            onClick={() => void handleDeleteStore(store.id)}
-                          >
-                            Удалить
-                          </button>
-                          <button
-                            type="button"
-                            className="settings__category-cancel"
-                            onClick={() => setConfirmDeleteStoreId(null)}
-                          >
-                            Отмена
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="settings__category-order">
-                          <button
-                            type="button"
-                            className="settings__category-move"
-                            aria-label={`Поднять магазин ${store.name}`}
-                            disabled={index === 0}
-                            onClick={() =>
-                              void handleMoveStore(store.id, 'up')
-                            }
-                          >
-                            ↑
-                          </button>
-                          <button
-                            type="button"
-                            className="settings__category-move"
-                            aria-label={`Опустить магазин ${store.name}`}
-                            disabled={index === stores.length - 1}
-                            onClick={() =>
-                              void handleMoveStore(store.id, 'down')
-                            }
-                          >
-                            ↓
-                          </button>
-                        </div>
-                        <span className="settings__category-name">
-                          {store.name}
-                        </span>
-                        <div className="settings__category-actions">
-                          <button
-                            type="button"
-                            className="settings__category-rename"
-                            onClick={() =>
-                              startRenameStore(store.id, store.name)
-                            }
-                          >
-                            Переименовать
-                          </button>
-                          <button
-                            type="button"
-                            className="settings__category-delete"
-                            aria-label={`Удалить магазин ${store.name}`}
-                            onClick={() => {
-                              setConfirmDeleteStoreId(store.id);
-                              setEditingStoreId(null);
-                            }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="settings__section">
-            <h3 className="settings__section-title">Продукты</h3>
-            <p className="settings__section-hint">
-              Нажмите на продукт, чтобы настроить категорию и магазины
-            </p>
-
-            {sortedProducts.length > 0 && (
-              <input
-                type="search"
-                className="settings__search-input"
-                placeholder="Поиск по названию"
-                value={productSearchQuery}
-                onChange={(event) => setProductSearchQuery(event.target.value)}
-              />
-            )}
-
-            {sortedProducts.length === 0 ? (
-              <p className="settings__empty-list">Пока нет продуктов</p>
-            ) : filteredProducts.length === 0 ? (
-              <p className="settings__empty-list">Ничего не найдено</p>
-            ) : (
-              <ul className="settings__items">
-                {filteredProducts.map((product) => (
-                  <li key={product.id}>
-                    <button
-                      type="button"
-                      className="settings__product-button"
-                      onClick={() => void openProductSettings(product)}
-                    >
-                      <span className="settings__product-button-name">
-                        {product.name}
-                      </span>
-                      <span className="settings__product-button-meta">
-                        {resolveCategory(product)}
-                        {product.is_favorite ? ' · ★' : ''}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="settings__section">
-            <h3 className="settings__section-title">Категории</h3>
-            <p className="settings__section-hint">
-              Стрелками ↑ ↓ задайте порядок категорий на главных вкладках
-            </p>
-
-            {!showAddCategory ? (
-              <button
-                type="button"
-                className="settings__add-category"
-                onClick={() => setShowAddCategory(true)}
-              >
-                + Добавить категорию
-              </button>
-            ) : (
-              <form className="settings__add-form" onSubmit={handleAddCategory}>
-                <input
-                  className="settings__add-input"
-                  placeholder="Название категории"
-                  value={newCategoryName}
-                  onChange={(event) => setNewCategoryName(event.target.value)}
-                  autoFocus
-                />
-                <button type="submit" className="settings__add-submit">
-                  Добавить
-                </button>
-                <button
-                  type="button"
-                  className="settings__add-cancel"
-                  onClick={() => {
-                    setShowAddCategory(false);
-                    setNewCategoryName('');
-                  }}
-                >
-                  Отмена
-                </button>
-              </form>
-            )}
-
-            <ul className="settings__category-list">
-              {categoryOptions.map((category, index) => (
-                <li key={category} className="settings__category-row">
-                  {editingCategory === category ? (
-                    <form
-                      className="settings__category-edit"
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void handleRenameCategory(category);
-                      }}
-                    >
-                      <input
-                        className="settings__category-input"
-                        value={editCategoryName}
-                        onChange={(event) =>
-                          setEditCategoryName(event.target.value)
-                        }
-                        autoFocus
-                      />
-                      <button
-                        type="submit"
-                        className="settings__category-save"
-                      >
-                        Сохранить
-                      </button>
-                      <button
-                        type="button"
-                        className="settings__category-cancel"
-                        onClick={cancelRenameCategory}
-                      >
-                        Отмена
-                      </button>
-                    </form>
-                  ) : (
-                    <>
-                      <div className="settings__category-order">
-                        <button
-                          type="button"
-                          className="settings__category-move"
-                          aria-label={`Поднять категорию ${category}`}
-                          disabled={index === 0}
-                          onClick={() => handleMoveCategory(category, 'up')}
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          className="settings__category-move"
-                          aria-label={`Опустить категорию ${category}`}
-                          disabled={index === categoryOptions.length - 1}
-                          onClick={() => handleMoveCategory(category, 'down')}
-                        >
-                          ↓
-                        </button>
-                      </div>
-                      <span className="settings__category-name">{category}</span>
-                      <div className="settings__category-actions">
-                        <button
-                          type="button"
-                          className="settings__category-rename"
-                          onClick={() => startRenameCategory(category)}
-                        >
-                          Переименовать
-                        </button>
-                        {category !== 'прочее' && (
-                          <button
-                            type="button"
-                            className="settings__category-delete"
-                            aria-label={`Удалить категорию ${category}`}
-                            onClick={() => void handleDeleteCategory(category)}
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        </>
+        renderCategoriesSection()
       )}
+
+      {!isLoading && renderProductSettingsModal()}
     </div>
   );
 }
