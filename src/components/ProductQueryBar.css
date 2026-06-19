@@ -116,6 +116,44 @@
   background: #1565a0;
 }
 
+.query-bar__success-hint {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: #edf8f0;
+  border: 1px solid #b8e0c3;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2d6a3e;
+}
+
+.query-bar__extras {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8f0f6;
+}
+
+.query-bar__more,
+.query-bar__skip {
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1b7fc4;
+  cursor: pointer;
+}
+
+.query-bar__more:hover,
+.query-bar__skip:hover {
+  text-decoration: underline;
+}
+
+.query-bar__skip {
+  margin-top: 8px;
+  color: #8a9bab;
+}
+
 @media (max-width: 480px) {
   .query-bar__row {
     flex-direction: column;

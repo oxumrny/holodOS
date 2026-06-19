@@ -6,6 +6,7 @@ import {
   normalizeSearchQuery,
 } from '@/lib/productSearch';
 import type { Product, ProductCategory } from '@/types/product';
+import type { Store } from '@/types/store';
 
 import { ErrorBanner } from './ErrorBanner';
 import { ProductItem } from './ProductItem';
@@ -20,6 +21,10 @@ interface ProductListProps {
   emptyTitle: string;
   emptySubtitle: string;
   searchQuery: string;
+  stores?: Store[];
+  exclusionsMap?: Map<string, string[]>;
+  selectedStoreId?: string | null;
+  onSelectedStoreChange?: (storeId: string | null) => void;
   onRefresh: () => void;
   onAction: (id: string) => Promise<{ error: string | null }>;
   onOtherTabAction: (id: string) => Promise<{ error: string | null }>;
@@ -28,6 +33,57 @@ interface ProductListProps {
 
 function resolveCategory(product: Product): ProductCategory {
   return product.category ?? 'прочее';
+}
+
+function isExcludedFromStore(
+  productId: string,
+  storeId: string,
+  exclusionsMap: Map<string, string[]>,
+): boolean {
+  return exclusionsMap.get(productId)?.includes(storeId) ?? false;
+}
+
+function applyListFilters(
+  products: Product[],
+  options: {
+    frequentOnly: boolean;
+    selectedCategory: ProductCategory | 'all';
+    normalizedSearch: string;
+  },
+): Product[] {
+  let result = products;
+
+  if (options.frequentOnly) {
+    result = result.filter((product) => product.is_favorite);
+  }
+
+  if (options.selectedCategory !== 'all') {
+    result = result.filter(
+      (product) => resolveCategory(product) === options.selectedCategory,
+    );
+  }
+
+  return filterProductsBySearch(result, options.normalizedSearch);
+}
+
+function sortProductsByCategory(
+  products: Product[],
+  categoryOrder: ProductCategory[],
+): Product[] {
+  const categoryIndex = new Map(
+    categoryOrder.map((category, index) => [category, index]),
+  );
+
+  return [...products].sort((a, b) => {
+    const orderA = categoryIndex.get(resolveCategory(a)) ?? 999;
+    const orderB = categoryIndex.get(resolveCategory(b)) ?? 999;
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
+    return a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
+  });
 }
 
 function buildCategorizedEntries(
@@ -162,6 +218,10 @@ export function ProductList({
   emptyTitle,
   emptySubtitle,
   searchQuery,
+  stores = [],
+  exclusionsMap = new Map(),
+  selectedStoreId = null,
+  onSelectedStoreChange,
   onRefresh,
   onAction,
   onOtherTabAction,
@@ -173,6 +233,16 @@ export function ProductList({
   const [frequentOnly, setFrequentOnly] = useState(false);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [otherPlacesExpanded, setOtherPlacesExpanded] = useState(false);
+
+  const showStoreFilter = variant === 'finished' && stores.length > 0;
+
+  const handleStoreSelect = (storeId: string | null) => {
+    setOtherPlacesExpanded(false);
+    onSelectedStoreChange?.(storeId);
+  };
+
+  const selectedStore = stores.find((store) => store.id === selectedStoreId);
 
   const handleCategorySelect = (category: ProductCategory | 'all') => {
     setSelectedCategory(category);
@@ -234,21 +304,40 @@ export function ProductList({
     variant === 'active' ? 'в списке покупок' : 'в холодосе';
   const otherTabItemVariant = variant === 'active' ? 'finished' : 'active';
 
-  const filteredProducts = useMemo(() => {
-    let result = products;
-
-    if (frequentOnly) {
-      result = result.filter((product) => product.is_favorite);
+  const { mainPool, otherPool } = useMemo(() => {
+    if (!showStoreFilter || !selectedStoreId) {
+      return { mainPool: products, otherPool: [] as Product[] };
     }
 
-    if (selectedCategory !== 'all') {
-      result = result.filter(
-        (product) => resolveCategory(product) === selectedCategory,
-      );
+    const main: Product[] = [];
+    const other: Product[] = [];
+
+    for (const product of products) {
+      if (isExcludedFromStore(product.id, selectedStoreId, exclusionsMap)) {
+        other.push(product);
+      } else {
+        main.push(product);
+      }
     }
 
-    return filterProductsBySearch(result, normalizedSearch);
-  }, [products, selectedCategory, frequentOnly, normalizedSearch]);
+    return { mainPool: main, otherPool: other };
+  }, [products, showStoreFilter, selectedStoreId, exclusionsMap]);
+
+  const filterOptions = {
+    frequentOnly,
+    selectedCategory,
+    normalizedSearch,
+  };
+
+  const filteredMainProducts = useMemo(
+    () => applyListFilters(mainPool, filterOptions),
+    [mainPool, frequentOnly, selectedCategory, normalizedSearch],
+  );
+
+  const filteredOtherProducts = useMemo(
+    () => applyListFilters(otherPool, filterOptions),
+    [otherPool, frequentOnly, selectedCategory, normalizedSearch],
+  );
 
   const filteredOtherTabProducts = useMemo(() => {
     let result = filterProductsBySearch(otherTabProducts, normalizedSearch);
@@ -268,29 +357,29 @@ export function ProductList({
     );
   }, [otherTabProducts, normalizedSearch, selectedCategory, frequentOnly]);
 
-  const sortedByCategory = useMemo(() => {
-    const categoryIndex = new Map(
-      categoryOrder.map((category, index) => [category, index]),
-    );
+  const sortedMainProducts = useMemo(
+    () => sortProductsByCategory(filteredMainProducts, categoryOrder),
+    [filteredMainProducts, categoryOrder],
+  );
 
-    return [...filteredProducts].sort((a, b) => {
-      const orderA = categoryIndex.get(resolveCategory(a)) ?? 999;
-      const orderB = categoryIndex.get(resolveCategory(b)) ?? 999;
-
-      if (orderA !== orderB) {
-        return orderA - orderB;
-      }
-
-      return a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
-    });
-  }, [filteredProducts, categoryOrder]);
+  const sortedOtherProducts = useMemo(
+    () => sortProductsByCategory(filteredOtherProducts, categoryOrder),
+    [filteredOtherProducts, categoryOrder],
+  );
 
   const showCategoryHeaders = selectedCategory === 'all';
 
   const showCrossTabResults =
     normalizedSearch.length > 0 &&
-    filteredProducts.length === 0 &&
+    filteredMainProducts.length === 0 &&
     filteredOtherTabProducts.length > 0;
+
+  const showStoreMainEmpty =
+    Boolean(selectedStoreId) &&
+    sortedMainProducts.length === 0 &&
+    sortedOtherProducts.length > 0 &&
+    !normalizedSearch &&
+    !filterApplied;
 
   const crossTabResults = showCrossTabResults ? (
     <CrossTabResults
@@ -347,6 +436,35 @@ export function ProductList({
           onDismiss={() => setActionError(null)}
         />
       )}
+
+      {showStoreFilter && (
+        <div className="product-list__store-bar">
+          <label className="product-list__store-label" htmlFor="store-select">
+            Сейчас:
+          </label>
+          <select
+            id="store-select"
+            className="product-list__store-select"
+            value={selectedStoreId ?? ''}
+            onChange={(event) =>
+              handleStoreSelect(event.target.value || null)
+            }
+          >
+            <option value="">Все магазины</option>
+            {stores.map((store) => (
+              <option key={store.id} value={store.id}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+          {selectedStore && (
+            <p className="product-list__store-counter">
+              {mainPool.length} из {products.length} для {selectedStore.name}
+            </p>
+          )}
+        </div>
+      )}
+
       {products.length > 0 && (
         <div className="product-list__filters-panel">
           <div className="product-list__filters-bar">
@@ -440,9 +558,24 @@ export function ProductList({
         </div>
       )}
 
-      {sortedByCategory.length > 0 && (
+      {showStoreMainEmpty && (
+        <div className="product-list__centered product-list__centered--compact">
+          <p className="product-list__empty-subtitle">
+            Для этого магазина ничего не запланировано, но есть{' '}
+            {sortedOtherProducts.length}{' '}
+            {sortedOtherProducts.length === 1
+              ? 'позиция'
+              : sortedOtherProducts.length < 5
+                ? 'позиции'
+                : 'позиций'}{' '}
+            для других мест
+          </p>
+        </div>
+      )}
+
+      {sortedMainProducts.length > 0 && (
         <CategorizedProductList
-          products={sortedByCategory}
+          products={sortedMainProducts}
           showCategoryHeaders={showCategoryHeaders}
           variant={variant}
           onAction={handleAction}
@@ -450,8 +583,9 @@ export function ProductList({
         />
       )}
 
-      {filteredProducts.length === 0 &&
+      {filteredMainProducts.length === 0 &&
         !showCrossTabResults &&
+        !showStoreMainEmpty &&
         products.length > 0 && (
           <div className="product-list__centered product-list__centered--compact">
             <p className="product-list__empty-subtitle">
@@ -467,6 +601,46 @@ export function ProductList({
             </p>
           </div>
         )}
+
+      {showStoreFilter && selectedStoreId && otherPool.length > 0 && (
+        <section className="product-list__group">
+          <button
+            type="button"
+            className="product-list__group-toggle"
+            aria-expanded={otherPlacesExpanded}
+            onClick={() => setOtherPlacesExpanded((expanded) => !expanded)}
+          >
+            <span
+              className={`product-list__group-chevron ${otherPlacesExpanded ? '' : 'product-list__group-chevron--collapsed'}`}
+              aria-hidden
+            >
+              ▾
+            </span>
+            <h2 className="product-list__group-title">
+              Купить в другом месте
+            </h2>
+            <span className="product-list__group-count">
+              {sortedOtherProducts.length}
+            </span>
+          </button>
+          {otherPlacesExpanded && sortedOtherProducts.length > 0 && (
+            <CategorizedProductList
+              products={sortedOtherProducts}
+              showCategoryHeaders={showCategoryHeaders}
+              variant={variant}
+              onAction={handleAction}
+              onDelete={handleDelete}
+            />
+          )}
+          {otherPlacesExpanded && sortedOtherProducts.length === 0 && (
+            <p className="product-list__empty-subtitle product-list__group-empty">
+              {normalizedSearch
+                ? `Ничего не найдено по запросу «${searchQuery.trim()}»`
+                : 'Нет позиций для других мест с текущими фильтрами'}
+            </p>
+          )}
+        </section>
+      )}
 
       {crossTabResults}
     </div>

@@ -1,0 +1,53 @@
+.store-exclusions {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.store-exclusions__legend {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6b7c;
+}
+
+.store-exclusions__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.store-exclusions__item {
+  margin: 0;
+}
+
+.store-exclusions__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f0f7fc;
+  border: 1px solid #d4e4f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1a2b3c;
+  cursor: pointer;
+}
+
+.store-exclusions__label:has(.store-exclusions__checkbox:checked) {
+  background: #fdeeee;
+  border-color: #f0b8b8;
+}
+
+.store-exclusions__checkbox {
+  margin: 0;
+  accent-color: #e05c5c;
+}
+
+.store-exclusions:disabled .store-exclusions__label {
+  opacity: 0.7;
+  cursor: default;
+}

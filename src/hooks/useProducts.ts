@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { resolveDetectedCategory } from '@/lib/categoryConfig';
 import { detectCategory } from '@/lib/detectCategory';
+import { setProductExclusions } from '@/lib/productExclusions';
 import { supabase } from '@/lib/supabase';
 import type { Product, ProductStatus } from '@/types/product';
 
@@ -48,6 +49,7 @@ export function useProducts(status: ProductStatus) {
   const addProduct = async (
     name: string,
     targetStatus: ProductStatus = status,
+    excludedStoreIds: string[] = [],
   ) => {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -93,12 +95,25 @@ export function useProducts(status: ProductStatus) {
       insertPayload.finished_at = new Date().toISOString();
     }
 
-    const { error: insertError } = await supabase
+    const { data: insertedProduct, error: insertError } = await supabase
       .from('products')
-      .insert(insertPayload);
+      .insert(insertPayload)
+      .select('id')
+      .single();
 
     if (insertError) {
       return { error: insertError.message };
+    }
+
+    if (excludedStoreIds.length > 0 && insertedProduct) {
+      const { error: exclusionsError } = await setProductExclusions(
+        insertedProduct.id,
+        excludedStoreIds,
+      );
+
+      if (exclusionsError) {
+        return { error: exclusionsError };
+      }
     }
 
     await fetchProducts();
