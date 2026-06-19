@@ -97,8 +97,10 @@ export function Settings({ onBack }: SettingsProps) {
   );
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
+  const fetchProducts = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
 
     const { data, error: fetchError } = await supabase
@@ -116,7 +118,9 @@ export function Settings({ onBack }: SettingsProps) {
       })));
     }
 
-    setLoading(false);
+    if (!options?.silent) {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -128,11 +132,23 @@ export function Settings({ onBack }: SettingsProps) {
       return;
     }
 
+    const scrollY = window.scrollY;
     const previousOverflow = document.body.style.overflow;
+    const previousPosition = document.body.style.position;
+    const previousTop = document.body.style.top;
+    const previousWidth = document.body.style.width;
+
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
 
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.body.style.position = previousPosition;
+      document.body.style.top = previousTop;
+      document.body.style.width = previousWidth;
+      window.scrollTo(0, scrollY);
     };
   }, [editingProduct]);
 
@@ -292,7 +308,7 @@ export function Settings({ onBack }: SettingsProps) {
       return { error: exclusionsError };
     }
 
-    await fetchProducts();
+    await fetchProducts({ silent: true });
     const savedProductId = editingProduct.id;
     closeProductSettings();
     highlightProduct(savedProductId);
@@ -355,7 +371,7 @@ export function Settings({ onBack }: SettingsProps) {
 
     bumpCategories();
     cancelRenameCategory();
-    await fetchProducts();
+    await fetchProducts({ silent: true });
   };
 
   const handleDeleteCategory = async (name: string) => {
@@ -378,7 +394,7 @@ export function Settings({ onBack }: SettingsProps) {
     }
 
     bumpCategories();
-    await fetchProducts();
+    await fetchProducts({ silent: true });
   };
 
   const handleMoveCategory = (category: string, direction: 'up' | 'down') => {
