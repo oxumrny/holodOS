@@ -1,8 +1,11 @@
 import type { Product } from '@/types/product';
 
+export type MealType = 'breakfast' | 'lunch';
+
 export interface Recipe {
   id: string;
   title: string;
+  meal_type: MealType;
   instructions: string;
   cook_time_minutes: number;
   sort_order: number;

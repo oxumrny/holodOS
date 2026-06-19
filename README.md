@@ -109,6 +109,10 @@
 
 **Секции списка** (пересчитываются при смене продуктов в холодосе / покупках):
 
+Сначала блоки **Завтраки** и **Обеды** (`meal_type`: `breakfast` | `lunch`). До **12:00** сверху «Завтраки», ниже «Обеды» (второй блок можно свернуть); с **12:00** — наоборот. Оба типа всегда видны. Порядок — `src/lib/recipeMealTime.ts` (локальное время устройства).
+
+Внутри каждого блока:
+
 | Секция | Условие |
 |--------|---------|
 | **Можно сейчас** | все ингредиенты `active` |
@@ -117,10 +121,13 @@
 
 **Форма рецепта** (`RecipeForm`, modal как у продукта):
 
-- название, инструкция, время (минуты; `0` = не указано);
+- название, **тип** (завтрак / обед), инструкция, время (минуты; `0` = не указано);
+- при создании тип по умолчанию — актуальный по времени суток;
 - ингредиенты — multiselect из каталога (🧊 / 📋 в picker);
 - выбранные ингредиенты — чипы под поиском с **×** (можно убрать, в т.ч. «удалённый ингредиент»);
 - минимум 1 ингредиент; удаление рецепта — с подтверждением.
+
+**Просмотр рецепта** (`RecipeDetail`): тип приёма пищи, ингредиенты с ✅ / ❌ / ⚠️; **недостающие (❌) — вверху списка**; кнопка «Редактировать».
 
 Удаление продукта в настройках **не удаляет** рецепт: ингредиент «ломается» (`ON DELETE SET NULL`), рецепт уходит в «Нужно поправить». Кнопки «добавить в покупки» нет — finished уже в списке покупок.
 
@@ -174,6 +181,7 @@ src/
     productSearch.ts
     productExclusions.ts         — чтение/запись blacklist
     recipeStatus.ts              — ready / missing / broken
+    recipeMealTime.ts            — порядок блоков завтрак/обед по часу
     selectedStore.ts             — localStorage: выбранный магазин
   types/
     product.ts
@@ -184,9 +192,11 @@ supabase/
   migrate-stores.sql             — магазины + blacklist (существующая БД)
   migrate-recipes.sql            — рецепты (существующая БД)
   migrate-recipes-fix-null-product-id.sql — fix nullable product_id
+  migrate-recipes-meal-type.sql  — колонка meal_type
 .env.example
 vercel.json
 ROADMAP.md
+RECIPES_IMPLEMENTATION.md
 ```
 
 ### Архитектурные особенности
@@ -239,6 +249,7 @@ ROADMAP.md
 |---------|-----|----------|
 | `id` | uuid | первичный ключ |
 | `title` | text | название |
+| `meal_type` | text | `breakfast` или `lunch` |
 | `instructions` | text | инструкция, по умолчанию `''` |
 | `cook_time_minutes` | integer | время в минутах; `0` = не указано |
 | `sort_order` | integer | порядок |
@@ -262,6 +273,7 @@ ROADMAP.md
 | `products` уже есть, без магазинов | `supabase/migrate-stores.sql` |
 | нужны рецепты | `supabase/migrate-recipes.sql` |
 | ошибка `product_id violates not-null` при удалении продукта | `supabase/migrate-recipes-fix-null-product-id.sql` |
+| рецепты без `meal_type` | `supabase/migrate-recipes-meal-type.sql` |
 
 Не запускайте весь `schema.sql` повторно на существующей БД — policies для `products` уже созданы и вызовут ошибку.
 
@@ -335,7 +347,9 @@ npm run preview
 
 ## История и планы
 
-Краткая эволюция: Expo → веб (Vite); категории и CRUD → UX (поиск, компактные карточки, липкие категории, мастхэв) → **магазины, blacklist, фильтр списка покупок** → **рецепты** (ready / missing / broken, CRUD, связь с каталогом продуктов).
+Краткая эволюция: Expo → веб (Vite); категории и CRUD → UX (поиск, компактные карточки, липкие категории, мастхэв) → **магазины, blacklist, фильтр списка покупок** → **рецепты** (ready / missing / broken, завтрак/обед по времени суток, CRUD).
+
+Подробное ТЗ по рецептам — **[RECIPES_IMPLEMENTATION.md](./RECIPES_IMPLEMENTATION.md)**.
 
 Будущие фичи — в **[ROADMAP.md](./ROADMAP.md)** (карточка продукта из списка, preferred store, маршрут на день, bulk-exclusions и др.).
 

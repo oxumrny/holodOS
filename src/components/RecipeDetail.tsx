@@ -3,7 +3,9 @@ import {
   classifyRecipe,
   getIngredientStatuses,
   type IngredientAvailabilityStatus,
+  type IngredientStatusEntry,
 } from '@/lib/recipeStatus';
+import { getMealTypeSingularLabel } from '@/lib/recipeMealTime';
 import type { Product } from '@/types/product';
 import type { RecipeWithIngredients } from '@/types/recipe';
 
@@ -49,6 +51,22 @@ function ingredientStatusLabel(
   return productName ?? 'неизвестный продукт';
 }
 
+function sortIngredientStatuses(
+  entries: IngredientStatusEntry[],
+): IngredientStatusEntry[] {
+  return [...entries].sort((left, right) => {
+    if (left.status === 'finished' && right.status !== 'finished') {
+      return -1;
+    }
+
+    if (right.status === 'finished' && left.status !== 'finished') {
+      return 1;
+    }
+
+    return 0;
+  });
+}
+
 export function RecipeDetail({
   recipe,
   activeProducts,
@@ -61,7 +79,9 @@ export function RecipeDetail({
     finishedProducts,
   );
   const classifiedRecipe = classifyRecipe(recipe, statusContext);
-  const ingredientStatuses = getIngredientStatuses(recipe, statusContext);
+  const ingredientStatuses = sortIngredientStatuses(
+    getIngredientStatuses(recipe, statusContext),
+  );
   const cookTime = formatCookTime(recipe.cook_time_minutes);
 
   return (
@@ -71,6 +91,9 @@ export function RecipeDetail({
           <h2 className="recipe-detail__title" id="recipe-detail-title">
             {recipe.title}
           </h2>
+          <p className="recipe-detail__meal-type">
+            {getMealTypeSingularLabel(recipe.meal_type)}
+          </p>
           {cookTime && (
             <p className="recipe-detail__time">{cookTime}</p>
           )}

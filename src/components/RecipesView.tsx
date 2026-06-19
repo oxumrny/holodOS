@@ -7,9 +7,15 @@ import {
   isBrokenIngredient,
   type ClassifiedRecipe,
 } from '@/lib/recipeStatus';
+import {
+  getMealTypeLabel,
+  getMealTypeOrder,
+  getPrimaryMealHint,
+  getPrimaryMealType,
+} from '@/lib/recipeMealTime';
 import { normalizeSearchQuery } from '@/lib/productSearch';
 import type { Product } from '@/types/product';
-import type { RecipeWithIngredients } from '@/types/recipe';
+import type { MealType, RecipeWithIngredients } from '@/types/recipe';
 
 import './RecipesView.css';
 
@@ -149,6 +155,106 @@ function RecipeSection({
   );
 }
 
+function filterRecipesByMealType(
+  recipes: ClassifiedRecipe[],
+  mealType: MealType,
+): ClassifiedRecipe[] {
+  return recipes.filter((recipe) => recipe.meal_type === mealType);
+}
+
+interface MealTypeBlockProps {
+  mealType: MealType;
+  isPrimary: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  readyRecipes: ClassifiedRecipe[];
+  missingRecipes: ClassifiedRecipe[];
+  brokenRecipes: ClassifiedRecipe[];
+  productsById: Map<string, Product>;
+  onRecipeClick: (recipe: ClassifiedRecipe) => void;
+}
+
+function MealTypeBlock({
+  mealType,
+  isPrimary,
+  collapsed,
+  onToggleCollapse,
+  readyRecipes,
+  missingRecipes,
+  brokenRecipes,
+  productsById,
+  onRecipeClick,
+}: MealTypeBlockProps) {
+  const mealHint = isPrimary ? getPrimaryMealHint(mealType) : null;
+  const hasRecipes =
+    readyRecipes.length > 0 ||
+    missingRecipes.length > 0 ||
+    brokenRecipes.length > 0;
+  const isExpanded = isPrimary || !collapsed;
+
+  return (
+    <section className="recipes-view__meal-block">
+      <div className="recipes-view__meal-header">
+        {isPrimary ? (
+          <h3 className="recipes-view__meal-title">
+            {getMealTypeLabel(mealType)}
+          </h3>
+        ) : (
+          <button
+            type="button"
+            className="recipes-view__meal-toggle"
+            onClick={onToggleCollapse}
+            aria-expanded={isExpanded}
+          >
+            <span className="recipes-view__meal-toggle-label">
+              {getMealTypeLabel(mealType)}
+            </span>
+            <span className="recipes-view__meal-toggle-icon" aria-hidden>
+              {collapsed ? '▸' : '▾'}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {mealHint && (
+        <p className="recipes-view__meal-hint">{mealHint}</p>
+      )}
+
+      {isExpanded && (
+        <div className="recipes-view__meal-sections">
+          {hasRecipes ? (
+            <>
+              <RecipeSection
+                title="Можно сейчас"
+                recipes={readyRecipes}
+                variant="ready"
+                productsById={productsById}
+                onRecipeClick={onRecipeClick}
+              />
+              <RecipeSection
+                title="Не хватает"
+                recipes={missingRecipes}
+                variant="missing"
+                productsById={productsById}
+                onRecipeClick={onRecipeClick}
+              />
+              <RecipeSection
+                title="Нужно поправить"
+                recipes={brokenRecipes}
+                variant="broken"
+                productsById={productsById}
+                onRecipeClick={onRecipeClick}
+              />
+            </>
+          ) : (
+            <p className="recipes-view__meal-empty">Пока нет рецептов</p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function RecipesView({
   recipes,
   loading,
@@ -160,6 +266,14 @@ export function RecipesView({
   onRecipeClick,
 }: RecipesViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [collapsedSecondaryMeal, setCollapsedSecondaryMeal] = useState(true);
+
+  const mealTypeOrder = getMealTypeOrder();
+  const primaryMealType = getPrimaryMealType();
+  const secondaryMealType =
+    mealTypeOrder[0] === primaryMealType
+      ? mealTypeOrder[1]
+      : mealTypeOrder[0];
 
   const statusContext = useMemo(
     () => buildRecipeStatusContext(activeProducts, finishedProducts),
@@ -202,10 +316,7 @@ export function RecipesView({
     [filteredRecipes],
   );
 
-  const hasVisibleRecipes =
-    readyRecipes.length > 0 ||
-    missingRecipes.length > 0 ||
-    brokenRecipes.length > 0;
+  const hasVisibleRecipes = filteredRecipes.length > 0;
 
   if (loading) {
     return (
@@ -289,24 +400,42 @@ export function RecipesView({
         </div>
       ) : (
         <div className="recipes-view__sections">
-          <RecipeSection
-            title="Можно сейчас"
-            recipes={readyRecipes}
-            variant="ready"
+          <MealTypeBlock
+            mealType={primaryMealType}
+            isPrimary
+            collapsed={false}
+            onToggleCollapse={() => undefined}
+            readyRecipes={filterRecipesByMealType(readyRecipes, primaryMealType)}
+            missingRecipes={filterRecipesByMealType(
+              missingRecipes,
+              primaryMealType,
+            )}
+            brokenRecipes={filterRecipesByMealType(
+              brokenRecipes,
+              primaryMealType,
+            )}
             productsById={statusContext.productsById}
             onRecipeClick={onRecipeClick}
           />
-          <RecipeSection
-            title="Не хватает"
-            recipes={missingRecipes}
-            variant="missing"
-            productsById={statusContext.productsById}
-            onRecipeClick={onRecipeClick}
-          />
-          <RecipeSection
-            title="Нужно поправить"
-            recipes={brokenRecipes}
-            variant="broken"
+          <MealTypeBlock
+            mealType={secondaryMealType}
+            isPrimary={false}
+            collapsed={collapsedSecondaryMeal}
+            onToggleCollapse={() =>
+              setCollapsedSecondaryMeal((current) => !current)
+            }
+            readyRecipes={filterRecipesByMealType(
+              readyRecipes,
+              secondaryMealType,
+            )}
+            missingRecipes={filterRecipesByMealType(
+              missingRecipes,
+              secondaryMealType,
+            )}
+            brokenRecipes={filterRecipesByMealType(
+              brokenRecipes,
+              secondaryMealType,
+            )}
             productsById={statusContext.productsById}
             onRecipeClick={onRecipeClick}
           />

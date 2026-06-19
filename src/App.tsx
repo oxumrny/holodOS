@@ -16,6 +16,7 @@ import { useProductExclusionsMap } from '@/hooks/useProductExclusionsMap';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useStores } from '@/hooks/useStores';
 import type { ClassifiedRecipe } from '@/lib/recipeStatus';
+import { getPrimaryMealType } from '@/lib/recipeMealTime';
 import {
   migrateFavoriteProductsFromLocalStorage,
 } from '@/lib/frequentProducts';
@@ -64,6 +65,7 @@ function countDeletedIngredients(recipe: RecipeWithIngredients): number {
 function recipeToFormValues(recipe: RecipeWithIngredients): RecipeFormValues {
   return {
     title: recipe.title,
+    mealType: recipe.meal_type,
     instructions: recipe.instructions,
     cookTimeMinutes: recipe.cook_time_minutes,
     productIds: recipe.ingredients
@@ -74,6 +76,7 @@ function recipeToFormValues(recipe: RecipeWithIngredients): RecipeFormValues {
 
 const emptyRecipeFormValues: RecipeFormValues = {
   title: '',
+  mealType: 'lunch',
   instructions: '',
   cookTimeMinutes: 0,
   productIds: [],
@@ -291,6 +294,7 @@ export default function App() {
     if (recipeModalState?.view === 'create') {
       const result = await recipesState.createRecipe(
         values.title,
+        values.mealType,
         values.instructions,
         values.cookTimeMinutes,
         values.productIds,
@@ -307,6 +311,7 @@ export default function App() {
       const result = await recipesState.updateRecipe(
         recipeModalState.recipeId,
         values.title,
+        values.mealType,
         values.instructions,
         values.cookTimeMinutes,
         values.productIds,
@@ -396,7 +401,10 @@ export default function App() {
               initialValues={
                 recipeModalState.view === 'edit' && selectedRecipe
                   ? recipeToFormValues(selectedRecipe)
-                  : emptyRecipeFormValues
+                  : {
+                      ...emptyRecipeFormValues,
+                      mealType: getPrimaryMealType(),
+                    }
               }
               initialDeletedIngredientCount={
                 recipeModalState.view === 'edit' && selectedRecipe

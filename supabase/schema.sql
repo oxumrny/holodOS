@@ -89,6 +89,7 @@ create policy "Anyone can delete product_store_exclusions"
 create table if not exists recipes (
   id uuid primary key default gen_random_uuid(),
   title text not null check (char_length(trim(title)) > 0),
+  meal_type text not null default 'lunch' check (meal_type in ('breakfast', 'lunch')),
   instructions text not null default '',
   cook_time_minutes integer not null default 0 check (cook_time_minutes >= 0),
   sort_order integer not null default 0,
@@ -97,6 +98,7 @@ create table if not exists recipes (
 
 create index if not exists recipes_sort_order_idx on recipes (sort_order);
 create index if not exists recipes_created_at_idx on recipes (created_at desc);
+create index if not exists recipes_meal_type_idx on recipes (meal_type);
 
 alter table recipes enable row level security;
 

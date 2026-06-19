@@ -11,11 +11,13 @@ import {
   normalizeSearchQuery,
 } from '@/lib/productSearch';
 import type { Product } from '@/types/product';
+import type { MealType } from '@/types/recipe';
 
 import './RecipeForm.css';
 
 export interface RecipeFormValues {
   title: string;
+  mealType: MealType;
   instructions: string;
   cookTimeMinutes: number;
   productIds: string[];
@@ -62,6 +64,7 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
     ref,
   ) {
     const [title, setTitle] = useState(initialValues.title);
+    const [mealType, setMealType] = useState<MealType>(initialValues.mealType);
     const [instructions, setInstructions] = useState(initialValues.instructions);
     const [cookTimeMinutes, setCookTimeMinutes] = useState(
       initialValues.cookTimeMinutes,
@@ -108,6 +111,7 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
     const isDirty = useMemo(
       () =>
         trimmedTitle !== initialValues.title.trim() ||
+        mealType !== initialValues.mealType ||
         instructions.trim() !== initialValues.instructions.trim() ||
         cookTimeMinutes !== initialValues.cookTimeMinutes ||
         orphanedDeletedKeys.length !== initialDeletedIngredientCount ||
@@ -119,6 +123,7 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
         cookTimeMinutes,
         initialValues,
         instructions,
+        mealType,
         selectedProductIdsArray,
         trimmedTitle,
         orphanedDeletedKeys.length,
@@ -220,6 +225,7 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
 
       const result = await onSave({
         title: trimmedTitle,
+        mealType,
         instructions: instructions.trim(),
         cookTimeMinutes: Math.max(0, cookTimeMinutes),
         productIds: selectedProductIdsArray,
@@ -289,6 +295,34 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
             autoFocus
           />
         </div>
+
+        <fieldset className="recipe-form__field recipe-form__meal-type">
+          <legend className="recipe-form__label">Тип</legend>
+          <div className="recipe-form__meal-options">
+            <label className="recipe-form__meal-option">
+              <input
+                type="radio"
+                name="recipe-meal-type"
+                value="breakfast"
+                checked={mealType === 'breakfast'}
+                onChange={() => setMealType('breakfast')}
+                disabled={isBusy}
+              />
+              <span>Завтрак</span>
+            </label>
+            <label className="recipe-form__meal-option">
+              <input
+                type="radio"
+                name="recipe-meal-type"
+                value="lunch"
+                checked={mealType === 'lunch'}
+                onChange={() => setMealType('lunch')}
+                disabled={isBusy}
+              />
+              <span>Обед</span>
+            </label>
+          </div>
+        </fieldset>
 
         <div className="recipe-form__field">
           <div className="recipe-form__field-header">

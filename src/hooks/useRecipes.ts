@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import type { Product } from '@/types/product';
-import type { RecipeWithIngredients } from '@/types/recipe';
+import type { MealType, RecipeWithIngredients } from '@/types/recipe';
 
 type RecipeIngredientRow = {
   recipe_id: string;
@@ -13,12 +13,17 @@ type RecipeIngredientRow = {
 type RecipeRow = {
   id: string;
   title: string;
+  meal_type: MealType | null;
   instructions: string;
   cook_time_minutes: number;
   sort_order: number;
   created_at: string;
   recipe_ingredients: RecipeIngredientRow[];
 };
+
+function normalizeMealType(mealType: MealType | null | undefined): MealType {
+  return mealType === 'breakfast' ? 'breakfast' : 'lunch';
+}
 
 function normalizeProduct(product: Product): Product {
   return {
@@ -31,6 +36,7 @@ function mapRecipeRow(row: RecipeRow): RecipeWithIngredients {
   return {
     id: row.id,
     title: row.title,
+    meal_type: normalizeMealType(row.meal_type),
     instructions: row.instructions,
     cook_time_minutes: row.cook_time_minutes,
     sort_order: row.sort_order,
@@ -124,6 +130,7 @@ export function useRecipes() {
 
   const createRecipe = async (
     title: string,
+    mealType: MealType,
     instructions: string,
     cookTimeMinutes: number,
     productIds: string[],
@@ -147,6 +154,7 @@ export function useRecipes() {
       .from('recipes')
       .insert({
         title: trimmedTitle,
+        meal_type: mealType,
         instructions: instructions.trim(),
         cook_time_minutes: Math.max(0, cookTimeMinutes),
         sort_order: maxOrder + 1,
@@ -175,6 +183,7 @@ export function useRecipes() {
   const updateRecipe = async (
     id: string,
     title: string,
+    mealType: MealType,
     instructions: string,
     cookTimeMinutes: number,
     productIds?: string[],
@@ -188,6 +197,7 @@ export function useRecipes() {
       .from('recipes')
       .update({
         title: trimmedTitle,
+        meal_type: mealType,
         instructions: instructions.trim(),
         cook_time_minutes: Math.max(0, cookTimeMinutes),
       })

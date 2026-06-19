@@ -131,6 +131,41 @@
   max-width: 120px;
 }
 
+.recipe-form__meal-type {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.recipe-form__meal-options {
+  display: flex;
+  gap: 12px;
+}
+
+.recipe-form__meal-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2b3c;
+  cursor: pointer;
+}
+
+.recipe-form__meal-option:has(input:checked) {
+  border-color: #1b7fc4;
+  background: #f0f7fc;
+  color: #1b7fc4;
+}
+
+.recipe-form__meal-option input {
+  accent-color: #1b7fc4;
+}
+
 .recipe-form__search {
   margin-bottom: 4px;
 }

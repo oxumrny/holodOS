@@ -23,6 +23,13 @@
   color: #1a2b3c;
 }
 
+.recipe-detail__meal-type {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b7fc4;
+}
+
 .recipe-detail__time {
   margin: 6px 0 0;
   font-size: 14px;
