@@ -1,0 +1,380 @@
+.recipe-form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(26, 43, 60, 0.45);
+}
+
+.recipe-form-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  box-shadow: 0 -8px 32px rgba(26, 43, 60, 0.18);
+}
+
+@media (min-width: 481px) {
+  .recipe-form-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .recipe-form-modal {
+    border-radius: 16px;
+    max-height: 85vh;
+  }
+}
+
+.recipe-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recipe-form__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.recipe-form__heading {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2b3c;
+}
+
+.recipe-form__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: #f0f7fc;
+  border: 1px solid #d4e4f0;
+  border-radius: 8px;
+  font-size: 22px;
+  line-height: 1;
+  color: #5a6b7c;
+  cursor: pointer;
+}
+
+.recipe-form__close:hover:not(:disabled) {
+  border-color: #1b7fc4;
+  color: #1b7fc4;
+  background: #e3f2fb;
+}
+
+.recipe-form__close:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.recipe-form__error {
+  margin: 0;
+  padding: 10px 12px;
+  background: #fdeeee;
+  border: 1px solid #f0b8b8;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #c0392b;
+}
+
+.recipe-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recipe-form__field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recipe-form__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6b7c;
+}
+
+.recipe-form__input,
+.recipe-form__textarea {
+  background: #f0f7fc;
+  border: 1px solid #d4e4f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  color: #1a2b3c;
+}
+
+.recipe-form__input:focus,
+.recipe-form__textarea:focus {
+  outline: 2px solid #1b7fc4;
+  outline-offset: 1px;
+}
+
+.recipe-form__input--narrow {
+  max-width: 120px;
+}
+
+.recipe-form__search {
+  margin-bottom: 4px;
+}
+
+.recipe-form__selected {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recipe-form__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 8px 6px 10px;
+  background: #f0f7fc;
+  border: 1px solid #d4e4f0;
+  border-radius: 999px;
+}
+
+.recipe-form__chip--deleted {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.recipe-form__chip-icon {
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.recipe-form__chip-name {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a2b3c;
+  text-transform: capitalize;
+}
+
+.recipe-form__chip--deleted .recipe-form__chip-name {
+  color: #b45309;
+}
+
+.recipe-form__chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  color: #5a6b7c;
+  cursor: pointer;
+}
+
+.recipe-form__chip-remove:hover:not(:disabled) {
+  border-color: #1b7fc4;
+  color: #1b7fc4;
+}
+
+.recipe-form__chip-remove:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.recipe-form__textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.45;
+  font-family: inherit;
+}
+
+.recipe-form__hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #8a9bab;
+}
+
+.recipe-form__picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #d4e4f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.recipe-form__picker-item + .recipe-form__picker-item {
+  border-top: 1px solid #eef3f7;
+}
+
+.recipe-form__picker-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.recipe-form__picker-label:hover {
+  background: #f8fcff;
+}
+
+.recipe-form__picker-checkbox {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: #1b7fc4;
+}
+
+.recipe-form__picker-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.recipe-form__picker-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  color: #1a2b3c;
+  text-transform: capitalize;
+}
+
+.recipe-form__actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.recipe-form__save {
+  flex: 1;
+  padding: 12px 16px;
+  background: #1b7fc4;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
+.recipe-form__save:hover:not(:disabled) {
+  background: #1565a0;
+}
+
+.recipe-form__save:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.recipe-form__cancel {
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #5a6b7c;
+  cursor: pointer;
+}
+
+.recipe-form__danger {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid #eef3f7;
+}
+
+.recipe-form__delete-trigger {
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e05c5c;
+  cursor: pointer;
+}
+
+.recipe-form__delete-trigger:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.recipe-form__delete-trigger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.recipe-form__delete-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recipe-form__delete-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #5a6b7c;
+}
+
+.recipe-form__delete-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.recipe-form__delete-submit {
+  padding: 10px 14px;
+  background: #e05c5c;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
+.recipe-form__delete-submit:hover:not(:disabled) {
+  background: #c0392b;
+}
+
+.recipe-form__delete-submit:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.recipe-form__delete-cancel {
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #d4e4f0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #5a6b7c;
+  cursor: pointer;
+}

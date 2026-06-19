@@ -1,0 +1,149 @@
+.recipe-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recipe-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recipe-detail__title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.recipe-detail__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a2b3c;
+}
+
+.recipe-detail__time {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8a9bab;
+}
+
+.recipe-detail__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: #f0f7fc;
+  border: 1px solid #d4e4f0;
+  border-radius: 8px;
+  font-size: 22px;
+  line-height: 1;
+  color: #5a6b7c;
+  cursor: pointer;
+}
+
+.recipe-detail__close:hover {
+  border-color: #1b7fc4;
+  color: #1b7fc4;
+  background: #e3f2fb;
+}
+
+.recipe-detail__alert {
+  padding: 12px 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #b45309;
+}
+
+.recipe-detail__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recipe-detail__section-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6b7c;
+}
+
+.recipe-detail__ingredients {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recipe-detail__ingredient {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f8fcff;
+  border: 1px solid #d4e4f0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1a2b3c;
+}
+
+.recipe-detail__ingredient--finished {
+  background: #fff;
+}
+
+.recipe-detail__ingredient--deleted {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #b45309;
+}
+
+.recipe-detail__ingredient-icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.recipe-detail__ingredient-name {
+  flex: 1;
+  min-width: 0;
+  text-transform: capitalize;
+}
+
+.recipe-detail__instructions {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #1a2b3c;
+  white-space: pre-wrap;
+}
+
+.recipe-detail__actions {
+  margin-top: 8px;
+}
+
+.recipe-detail__edit {
+  width: 100%;
+  padding: 12px 16px;
+  background: #1b7fc4;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+}
+
+.recipe-detail__edit:hover {
+  background: #1565a0;
+}

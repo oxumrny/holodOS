@@ -61,6 +61,11 @@
   border-color: #1b7fc4;
 }
 
+.app__icon-button--active {
+  border-color: #1b7fc4;
+  background: #eef6fc;
+}
+
 .app__main {
   min-height: 300px;
 }
