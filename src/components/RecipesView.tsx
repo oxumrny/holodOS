@@ -4,7 +4,8 @@ import { ErrorBanner } from '@/components/ErrorBanner';
 import {
   buildRecipeStatusContext,
   classifyRecipes,
-  isBrokenIngredient,
+  countBrokenSlots,
+  formatMissingLabels,
   type ClassifiedRecipe,
 } from '@/lib/recipeStatus';
 import {
@@ -15,12 +16,12 @@ import {
 } from '@/lib/recipeMealTime';
 import { normalizeSearchQuery } from '@/lib/productSearch';
 import type { Product } from '@/types/product';
-import type { MealType, RecipeWithIngredients } from '@/types/recipe';
+import type { MealType, RecipeFull } from '@/types/recipe';
 
 import './RecipesView.css';
 
 interface RecipesViewProps {
-  recipes: RecipeWithIngredients[];
+  recipes: RecipeFull[];
   loading: boolean;
   error: string | null;
   activeProducts: Product[];
@@ -53,9 +54,7 @@ function getDeletedIngredientCount(
   recipe: ClassifiedRecipe,
   productsById: Map<string, Product>,
 ): number {
-  return recipe.ingredients.filter((ingredient) =>
-    isBrokenIngredient(ingredient, productsById),
-  ).length;
+  return countBrokenSlots(recipe, productsById);
 }
 
 interface RecipeRowProps {
@@ -72,9 +71,10 @@ function RecipeRow({
   onClick,
 }: RecipeRowProps) {
   const cookTime = formatCookTime(recipe.cook_time_minutes);
-  const missingNames = recipe.missingIngredients
-    .map((entry) => entry.product.name)
-    .join(', ');
+  const missingNames = formatMissingLabels(
+    recipe.missingIngredients,
+    recipe.missingGroups,
+  );
   const deletedCount = getDeletedIngredientCount(recipe, productsById);
 
   return (
@@ -90,6 +90,12 @@ function RecipeRow({
             <span className="recipes-view__row-time">{cookTime}</span>
           )}
         </div>
+
+        {variant === 'ready' && recipe.readyCombinationLabel && (
+          <p className="recipes-view__row-meta recipes-view__row-meta--ready">
+            {recipe.readyCombinationLabel}
+          </p>
+        )}
 
         {variant === 'missing' && missingNames && (
           <p className="recipes-view__row-meta">

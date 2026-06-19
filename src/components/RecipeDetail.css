@@ -71,6 +71,37 @@
   color: #b45309;
 }
 
+.recipe-detail__alert--missing {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.recipe-detail__alert--ready {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.recipe-detail__ingredient-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recipe-detail__ingredient-block-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.recipe-detail__empty-ingredients {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
 .recipe-detail__section {
   display: flex;
   flex-direction: column;

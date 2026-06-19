@@ -181,6 +181,118 @@
   margin-bottom: 4px;
 }
 
+.recipe-form__picker-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recipe-form__ingredient-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid #eef3f7;
+}
+
+.recipe-form__section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recipe-form__section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a2b3c;
+}
+
+.recipe-form__section-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8a9bab;
+}
+
+.recipe-form__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recipe-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #f8fcff;
+  border: 1px solid #d4e4f0;
+  border-radius: 12px;
+}
+
+.recipe-form__group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recipe-form__group-index {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a6b7c;
+}
+
+.recipe-form__group-remove {
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e05c5c;
+  cursor: pointer;
+}
+
+.recipe-form__group-remove:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.recipe-form__group-remove:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.recipe-form__add-group {
+  align-self: flex-start;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px dashed #1b7fc4;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b7fc4;
+  cursor: pointer;
+}
+
+.recipe-form__add-group:hover:not(:disabled) {
+  background: #f0f7fc;
+}
+
+.recipe-form__add-group:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.recipe-form__picker-label--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.recipe-form__picker-label--disabled:hover {
+  background: transparent;
+}
+
 .recipe-form__selected {
   list-style: none;
   margin: 0 0 8px;

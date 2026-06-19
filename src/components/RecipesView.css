@@ -210,6 +210,10 @@
   color: #b45309;
 }
 
+.recipes-view__row-meta--ready {
+  color: #15803d;
+}
+
 .recipes-view__centered {
   display: flex;
   flex-direction: column;

@@ -29,7 +29,10 @@ import {
 import { supabaseConfigError } from '@/lib/supabase';
 
 import type { Product } from '@/types/product';
-import type { RecipeWithIngredients } from '@/types/recipe';
+import {
+  requiredProductIds,
+  type RecipeFull,
+} from '@/types/recipe';
 
 import './App.css';
 
@@ -56,21 +59,39 @@ function buildCatalogProducts(
   );
 }
 
-function countDeletedIngredients(recipe: RecipeWithIngredients): number {
-  return recipe.ingredients.filter(
-    (ingredient) => ingredient.product_id === null,
-  ).length;
+function formValuesToRecipeInput(values: RecipeFormValues) {
+  return {
+    title: values.title,
+    mealType: values.mealType,
+    instructions: values.instructions,
+    cookTimeMinutes: values.cookTimeMinutes,
+    requiredProductIds: values.requiredProductIds,
+    groups: values.groups.map((group) => ({
+      label: group.label,
+      productIds: group.productIds,
+    })),
+  };
 }
 
-function recipeToFormValues(recipe: RecipeWithIngredients): RecipeFormValues {
+function recipeToFormValues(recipe: RecipeFull): RecipeFormValues {
   return {
     title: recipe.title,
     mealType: recipe.meal_type,
     instructions: recipe.instructions,
     cookTimeMinutes: recipe.cook_time_minutes,
-    productIds: recipe.ingredients
-      .map((ingredient) => ingredient.product_id)
-      .filter((productId): productId is string => productId !== null),
+    requiredProductIds: requiredProductIds(recipe),
+    requiredDeletedCount: recipe.required.filter(
+      (item) => item.product_id === null,
+    ).length,
+    groups: recipe.groups.map((group) => ({
+      label: group.label,
+      productIds: group.options
+        .map((option) => option.product_id)
+        .filter((productId): productId is string => productId !== null),
+      deletedOptionCount: group.options.filter(
+        (option) => option.product_id === null,
+      ).length,
+    })),
   };
 }
 
@@ -79,7 +100,9 @@ const emptyRecipeFormValues: RecipeFormValues = {
   mealType: 'lunch',
   instructions: '',
   cookTimeMinutes: 0,
-  productIds: [],
+  requiredProductIds: [],
+  requiredDeletedCount: 0,
+  groups: [],
 };
 
 export default function App() {
@@ -312,11 +335,7 @@ export default function App() {
   const handleSaveRecipe = async (values: RecipeFormValues) => {
     if (recipeModalState?.view === 'create') {
       const result = await recipesState.createRecipe(
-        values.title,
-        values.mealType,
-        values.instructions,
-        values.cookTimeMinutes,
-        values.productIds,
+        formValuesToRecipeInput(values),
       );
 
       if (!result.error) {
@@ -336,11 +355,7 @@ export default function App() {
 
     const result = await recipesState.updateRecipe(
       editingRecipeId,
-      values.title,
-      values.mealType,
-      values.instructions,
-      values.cookTimeMinutes,
-      values.productIds,
+      formValuesToRecipeInput(values),
     );
 
     if (!result.error) {
@@ -498,7 +513,6 @@ export default function App() {
           products={catalogProducts}
           activeProductIds={activeProductIds}
           initialValues={recipeToFormValues(editingRecipe)}
-          initialDeletedIngredientCount={countDeletedIngredients(editingRecipe)}
           onSave={handleSaveEditingRecipe}
           onDelete={handleDeleteEditingRecipe}
           onBack={handleBackFromRecipeEdit}

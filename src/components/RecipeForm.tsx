@@ -15,12 +15,20 @@ import type { MealType } from '@/types/recipe';
 
 import './RecipeForm.css';
 
+export interface RecipeFormGroupValues {
+  label: string;
+  productIds: string[];
+  deletedOptionCount: number;
+}
+
 export interface RecipeFormValues {
   title: string;
   mealType: MealType;
   instructions: string;
   cookTimeMinutes: number;
-  productIds: string[];
+  requiredProductIds: string[];
+  requiredDeletedCount: number;
+  groups: RecipeFormGroupValues[];
 }
 
 interface RecipeFormProps {
@@ -29,7 +37,6 @@ interface RecipeFormProps {
   products: Product[];
   activeProductIds: Set<string>;
   initialValues: RecipeFormValues;
-  initialDeletedIngredientCount?: number;
   onSave: (values: RecipeFormValues) => Promise<{ error: string | null }>;
   onDelete?: () => Promise<{ error: string | null }>;
   onClose: () => void;
@@ -37,6 +44,13 @@ interface RecipeFormProps {
 
 export interface RecipeFormHandle {
   requestClose: () => void;
+}
+
+interface FormGroupState {
+  clientId: string;
+  label: string;
+  selectedProductIds: Set<string>;
+  orphanedDeletedKeys: string[];
 }
 
 function areProductIdsEqual(left: string[], right: string[]): boolean {
@@ -50,6 +64,181 @@ function areProductIdsEqual(left: string[], right: string[]): boolean {
   return sortedLeft.every((productId, index) => productId === sortedRight[index]);
 }
 
+function createGroupState(
+  group: RecipeFormGroupValues,
+  index: number,
+): FormGroupState {
+  return {
+    clientId: `group-${index}`,
+    label: group.label,
+    selectedProductIds: new Set(group.productIds),
+    orphanedDeletedKeys: Array.from(
+      { length: group.deletedOptionCount },
+      (_, orphanIndex) => `deleted-${index}-${orphanIndex}`,
+    ),
+  };
+}
+
+function nextGroupClientId(): string {
+  return `group-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+interface IngredientPickerProps {
+  pickerId: string;
+  products: Product[];
+  activeProductIds: Set<string>;
+  productById: Map<string, Product>;
+  selectedProductIds: Set<string>;
+  excludedProductIds: Set<string>;
+  orphanedDeletedKeys: string[];
+  search: string;
+  onSearchChange: (value: string) => void;
+  disabled: boolean;
+  onToggleProduct: (productId: string) => void;
+  onRemoveProduct: (productId: string) => void;
+  onRemoveOrphaned: (key: string) => void;
+}
+
+function IngredientPicker({
+  pickerId,
+  products,
+  activeProductIds,
+  productById,
+  selectedProductIds,
+  excludedProductIds,
+  orphanedDeletedKeys,
+  search,
+  onSearchChange,
+  disabled,
+  onToggleProduct,
+  onRemoveProduct,
+  onRemoveOrphaned,
+}: IngredientPickerProps) {
+  const normalizedSearch = useMemo(
+    () => normalizeSearchQuery(search),
+    [search],
+  );
+
+  const filteredProducts = useMemo(
+    () => filterProductsBySearch(products, normalizedSearch),
+    [normalizedSearch, products],
+  );
+
+  const selectedProductIdsArray = useMemo(
+    () =>
+      [...selectedProductIds].sort((left, right) => left.localeCompare(right)),
+    [selectedProductIds],
+  );
+
+  const selectedCount = selectedProductIds.size + orphanedDeletedKeys.length;
+
+  return (
+    <div className="recipe-form__picker-block">
+      <input
+        id={pickerId}
+        type="search"
+        className="recipe-form__input recipe-form__search"
+        value={search}
+        onChange={(event) => onSearchChange(event.target.value)}
+        disabled={disabled}
+        placeholder="Поиск продукта…"
+        aria-label="Поиск продуктов"
+      />
+
+      {selectedCount > 0 && (
+        <ul className="recipe-form__selected" aria-label="Выбранные продукты">
+          {selectedProductIdsArray.map((productId) => {
+            const product = productById.get(productId);
+            const statusIcon = activeProductIds.has(productId) ? '🧊' : '📋';
+
+            return (
+              <li key={productId} className="recipe-form__chip">
+                <span className="recipe-form__chip-icon" aria-hidden>
+                  {statusIcon}
+                </span>
+                <span className="recipe-form__chip-name">
+                  {product?.name ?? 'неизвестный продукт'}
+                </span>
+                <button
+                  type="button"
+                  className="recipe-form__chip-remove"
+                  onClick={() => onRemoveProduct(productId)}
+                  disabled={disabled}
+                  aria-label={`Убрать ${product?.name ?? 'продукт'}`}
+                >
+                  ×
+                </button>
+              </li>
+            );
+          })}
+          {orphanedDeletedKeys.map((key) => (
+            <li
+              key={key}
+              className="recipe-form__chip recipe-form__chip--deleted"
+            >
+              <span className="recipe-form__chip-icon" aria-hidden>
+                ⚠️
+              </span>
+              <span className="recipe-form__chip-name">удалённый ингредиент</span>
+              <button
+                type="button"
+                className="recipe-form__chip-remove"
+                onClick={() => onRemoveOrphaned(key)}
+                disabled={disabled}
+                aria-label="Убрать удалённый ингредиент"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {products.length === 0 ? (
+        <p className="recipe-form__hint">
+          Нет продуктов в каталоге — добавьте их в холодосе или настройках.
+        </p>
+      ) : filteredProducts.length === 0 ? (
+        <p className="recipe-form__hint">
+          {normalizedSearch
+            ? `Ничего не найдено по запросу «${search.trim()}»`
+            : 'Нет продуктов для выбора'}
+        </p>
+      ) : (
+        <ul className="recipe-form__picker" aria-labelledby={pickerId}>
+          {filteredProducts.map((product) => {
+            const checked = selectedProductIds.has(product.id);
+            const isExcluded = excludedProductIds.has(product.id);
+            const statusIcon = activeProductIds.has(product.id) ? '🧊' : '📋';
+
+            return (
+              <li key={product.id} className="recipe-form__picker-item">
+                <label
+                  className={`recipe-form__picker-label${
+                    isExcluded ? ' recipe-form__picker-label--disabled' : ''
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="recipe-form__picker-checkbox"
+                    checked={checked}
+                    onChange={() => onToggleProduct(product.id)}
+                    disabled={disabled || isExcluded}
+                  />
+                  <span className="recipe-form__picker-icon" aria-hidden>
+                    {statusIcon}
+                  </span>
+                  <span className="recipe-form__picker-name">{product.name}</span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
   function RecipeForm(
     {
@@ -58,7 +247,6 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
       products,
       activeProductIds,
       initialValues,
-      initialDeletedIngredientCount = 0,
       onSave,
       onDelete,
       onClose,
@@ -71,16 +259,22 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
     const [cookTimeMinutes, setCookTimeMinutes] = useState(
       initialValues.cookTimeMinutes,
     );
-    const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(
-      () => new Set(initialValues.productIds),
+    const [requiredProductIds, setRequiredProductIds] = useState<Set<string>>(
+      () => new Set(initialValues.requiredProductIds),
     );
-    const [orphanedDeletedKeys, setOrphanedDeletedKeys] = useState<string[]>(
+    const [requiredOrphanedKeys, setRequiredOrphanedKeys] = useState<string[]>(
       () =>
-        Array.from({ length: initialDeletedIngredientCount }, (_, index) =>
-          `deleted-${index}`,
+        Array.from({ length: initialValues.requiredDeletedCount }, (_, index) =>
+          `required-deleted-${index}`,
         ),
     );
-    const [ingredientSearch, setIngredientSearch] = useState('');
+    const [groups, setGroups] = useState<FormGroupState[]>(() =>
+      initialValues.groups.map(createGroupState),
+    );
+    const [requiredSearch, setRequiredSearch] = useState('');
+    const [groupSearches, setGroupSearches] = useState<Record<string, string>>(
+      {},
+    );
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
@@ -89,12 +283,10 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
     const isBusy = saving || deleting;
     const trimmedTitle = title.trim();
 
-    const selectedProductIdsArray = useMemo(
+    const requiredProductIdsArray = useMemo(
       () =>
-        [...selectedProductIds].sort((left, right) =>
-          left.localeCompare(right),
-        ),
-      [selectedProductIds],
+        [...requiredProductIds].sort((left, right) => left.localeCompare(right)),
+      [requiredProductIds],
     );
 
     const productById = useMemo(() => {
@@ -107,41 +299,103 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
       return map;
     }, [products]);
 
-    const selectedIngredientCount =
-      selectedProductIds.size + orphanedDeletedKeys.length;
+    const excludedForRequired = useMemo(() => {
+      const excluded = new Set<string>();
 
-    const isDirty = useMemo(
-      () =>
-        trimmedTitle !== initialValues.title.trim() ||
-        mealType !== initialValues.mealType ||
-        instructions.trim() !== initialValues.instructions.trim() ||
-        cookTimeMinutes !== initialValues.cookTimeMinutes ||
-        orphanedDeletedKeys.length !== initialDeletedIngredientCount ||
+      for (const group of groups) {
+        for (const productId of group.selectedProductIds) {
+          excluded.add(productId);
+        }
+      }
+
+      return excluded;
+    }, [groups]);
+
+    const getExcludedForGroup = useCallback(
+      (groupClientId: string) => {
+        const excluded = new Set(requiredProductIds);
+
+        for (const group of groups) {
+          if (group.clientId === groupClientId) {
+            continue;
+          }
+
+          for (const productId of group.selectedProductIds) {
+            excluded.add(productId);
+          }
+        }
+
+        return excluded;
+      },
+      [groups, requiredProductIds],
+    );
+
+    const isDirty = useMemo(() => {
+      if (trimmedTitle !== initialValues.title.trim()) {
+        return true;
+      }
+
+      if (mealType !== initialValues.mealType) {
+        return true;
+      }
+
+      if (instructions.trim() !== initialValues.instructions.trim()) {
+        return true;
+      }
+
+      if (cookTimeMinutes !== initialValues.cookTimeMinutes) {
+        return true;
+      }
+
+      if (
+        requiredOrphanedKeys.length !== initialValues.requiredDeletedCount
+      ) {
+        return true;
+      }
+
+      if (
         !areProductIdsEqual(
-          selectedProductIdsArray,
-          initialValues.productIds,
-        ),
-      [
-        cookTimeMinutes,
-        initialValues,
-        instructions,
-        mealType,
-        selectedProductIdsArray,
-        trimmedTitle,
-        orphanedDeletedKeys.length,
-        initialDeletedIngredientCount,
-      ],
-    );
+          requiredProductIdsArray,
+          initialValues.requiredProductIds,
+        )
+      ) {
+        return true;
+      }
 
-    const normalizedIngredientSearch = useMemo(
-      () => normalizeSearchQuery(ingredientSearch),
-      [ingredientSearch],
-    );
+      if (groups.length !== initialValues.groups.length) {
+        return true;
+      }
 
-    const filteredProducts = useMemo(
-      () => filterProductsBySearch(products, normalizedIngredientSearch),
-      [normalizedIngredientSearch, products],
-    );
+      return groups.some((group, index) => {
+        const initialGroup = initialValues.groups[index];
+
+        if (!initialGroup) {
+          return true;
+        }
+
+        if (group.label.trim() !== initialGroup.label.trim()) {
+          return true;
+        }
+
+        if (group.orphanedDeletedKeys.length !== initialGroup.deletedOptionCount) {
+          return true;
+        }
+
+        return !areProductIdsEqual(
+          [...group.selectedProductIds],
+          initialGroup.productIds,
+        );
+      });
+    }, [
+      cookTimeMinutes,
+      groups,
+      initialValues,
+      instructions,
+      mealType,
+      requiredOrphanedKeys.length,
+      requiredProductIdsArray,
+      trimmedTitle,
+    ]);
 
     const handleCloseRequest = useCallback(() => {
       if (isBusy) {
@@ -167,34 +421,55 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
       handleCloseRequest,
     ]);
 
-    const removeProduct = (productId: string) => {
+    const addGroup = () => {
       if (isBusy) {
         return;
       }
 
-      setSelectedProductIds((current) => {
-        const next = new Set(current);
-        next.delete(productId);
+      setGroups((current) => [
+        ...current,
+        {
+          clientId: nextGroupClientId(),
+          label: `Группа ${current.length + 1}`,
+          selectedProductIds: new Set(),
+          orphanedDeletedKeys: [],
+        },
+      ]);
+    };
+
+    const removeGroup = (clientId: string) => {
+      if (isBusy) {
+        return;
+      }
+
+      setGroups((current) =>
+        current.filter((group) => group.clientId !== clientId),
+      );
+      setGroupSearches((current) => {
+        const next = { ...current };
+        delete next[clientId];
         return next;
       });
     };
 
-    const removeOrphanedIngredient = (key: string) => {
+    const updateGroupLabel = (clientId: string, label: string) => {
       if (isBusy) {
         return;
       }
 
-      setOrphanedDeletedKeys((current) =>
-        current.filter((entry) => entry !== key),
+      setGroups((current) =>
+        current.map((group) =>
+          group.clientId === clientId ? { ...group, label } : group,
+        ),
       );
     };
 
-    const toggleProduct = (productId: string) => {
+    const toggleRequiredProduct = (productId: string) => {
       if (isBusy) {
         return;
       }
 
-      setSelectedProductIds((current) => {
+      setRequiredProductIds((current) => {
         const next = new Set(current);
 
         if (next.has(productId)) {
@@ -207,6 +482,30 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
       });
     };
 
+    const toggleGroupProduct = (clientId: string, productId: string) => {
+      if (isBusy) {
+        return;
+      }
+
+      setGroups((current) =>
+        current.map((group) => {
+          if (group.clientId !== clientId) {
+            return group;
+          }
+
+          const nextIds = new Set(group.selectedProductIds);
+
+          if (nextIds.has(productId)) {
+            nextIds.delete(productId);
+          } else {
+            nextIds.add(productId);
+          }
+
+          return { ...group, selectedProductIds: nextIds };
+        }),
+      );
+    };
+
     const handleSubmit = async () => {
       if (isBusy) {
         return;
@@ -214,11 +513,6 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
 
       if (!trimmedTitle) {
         setError('Введите название рецепта');
-        return;
-      }
-
-      if (selectedProductIds.size === 0) {
-        setError('Добавьте хотя бы один ингредиент');
         return;
       }
 
@@ -230,7 +524,15 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
         mealType,
         instructions: instructions.trim(),
         cookTimeMinutes: Math.max(0, cookTimeMinutes),
-        productIds: selectedProductIdsArray,
+        requiredProductIds: requiredProductIdsArray,
+        requiredDeletedCount: requiredOrphanedKeys.length,
+        groups: groups.map((group) => ({
+          label: group.label.trim(),
+          productIds: [...group.selectedProductIds].sort((left, right) =>
+            left.localeCompare(right),
+          ),
+          deletedOptionCount: group.orphanedDeletedKeys.length,
+        })),
       });
 
       setSaving(false);
@@ -329,134 +631,6 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
         </fieldset>
 
         <div className="recipe-form__field">
-          <div className="recipe-form__field-header">
-            <span className="recipe-form__label">
-              Ингредиенты ({selectedIngredientCount})
-            </span>
-          </div>
-          <input
-            type="search"
-            className="recipe-form__input recipe-form__search"
-            value={ingredientSearch}
-            onChange={(event) => setIngredientSearch(event.target.value)}
-            disabled={isBusy}
-            placeholder="Поиск продукта…"
-            aria-label="Поиск ингредиентов"
-          />
-          {selectedIngredientCount > 0 && (
-            <ul
-              className="recipe-form__selected"
-              aria-label="Выбранные ингредиенты"
-            >
-              {selectedProductIdsArray.map((productId) => {
-                const product = productById.get(productId);
-                const statusIcon = activeProductIds.has(productId)
-                  ? '🧊'
-                  : '📋';
-
-                return (
-                  <li key={productId} className="recipe-form__chip">
-                    <span className="recipe-form__chip-icon" aria-hidden>
-                      {statusIcon}
-                    </span>
-                    <span className="recipe-form__chip-name">
-                      {product?.name ?? 'неизвестный продукт'}
-                    </span>
-                    <button
-                      type="button"
-                      className="recipe-form__chip-remove"
-                      onClick={() => removeProduct(productId)}
-                      disabled={isBusy}
-                      aria-label={`Убрать ${product?.name ?? 'продукт'}`}
-                    >
-                      ×
-                    </button>
-                  </li>
-                );
-              })}
-              {orphanedDeletedKeys.map((key) => (
-                <li
-                  key={key}
-                  className="recipe-form__chip recipe-form__chip--deleted"
-                >
-                  <span className="recipe-form__chip-icon" aria-hidden>
-                    ⚠️
-                  </span>
-                  <span className="recipe-form__chip-name">
-                    удалённый ингредиент
-                  </span>
-                  <button
-                    type="button"
-                    className="recipe-form__chip-remove"
-                    onClick={() => removeOrphanedIngredient(key)}
-                    disabled={isBusy}
-                    aria-label="Убрать удалённый ингредиент"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {products.length === 0 ? (
-            <p className="recipe-form__hint">
-              Нет продуктов в каталоге — добавьте их в холодосе или настройках.
-            </p>
-          ) : filteredProducts.length === 0 ? (
-            <p className="recipe-form__hint">
-              {normalizedIngredientSearch
-                ? `Ничего не найдено по запросу «${ingredientSearch.trim()}»`
-                : 'Нет продуктов для выбора'}
-            </p>
-          ) : (
-            <ul className="recipe-form__picker" aria-label="Выбор ингредиентов">
-              {filteredProducts.map((product) => {
-                const checked = selectedProductIds.has(product.id);
-                const statusIcon = activeProductIds.has(product.id) ? '🧊' : '📋';
-
-                return (
-                  <li key={product.id} className="recipe-form__picker-item">
-                    <label className="recipe-form__picker-label">
-                      <input
-                        type="checkbox"
-                        className="recipe-form__picker-checkbox"
-                        checked={checked}
-                        onChange={() => toggleProduct(product.id)}
-                        disabled={isBusy}
-                      />
-                      <span
-                        className="recipe-form__picker-icon"
-                        aria-hidden
-                      >
-                        {statusIcon}
-                      </span>
-                      <span className="recipe-form__picker-name">
-                        {product.name}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
-        <div className="recipe-form__field">
-          <label className="recipe-form__label" htmlFor="recipe-instructions">
-            Инструкция
-          </label>
-          <textarea
-            id="recipe-instructions"
-            className="recipe-form__textarea"
-            value={instructions}
-            onChange={(event) => setInstructions(event.target.value)}
-            disabled={isBusy}
-            rows={5}
-            placeholder="Опишите шаги приготовления…"
-          />
-        </div>
-
-        <div className="recipe-form__field">
           <label className="recipe-form__label" htmlFor="recipe-cook-time">
             Время, мин
           </label>
@@ -475,6 +649,181 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
           />
           <p className="recipe-form__hint">0 — не указывать время</p>
         </div>
+
+        <div className="recipe-form__field">
+          <label className="recipe-form__label" htmlFor="recipe-instructions">
+            Инструкция
+          </label>
+          <textarea
+            id="recipe-instructions"
+            className="recipe-form__textarea"
+            value={instructions}
+            onChange={(event) => setInstructions(event.target.value)}
+            disabled={isBusy}
+            rows={5}
+            placeholder="Опишите шаги приготовления…"
+          />
+        </div>
+
+        <section className="recipe-form__ingredient-section">
+          <div className="recipe-form__section-heading">
+            <h3 className="recipe-form__section-title">Обязательно</h3>
+            <span className="recipe-form__section-count">
+              {requiredProductIds.size + requiredOrphanedKeys.length}
+            </span>
+          </div>
+          <IngredientPicker
+            pickerId="recipe-required-picker"
+            products={products}
+            activeProductIds={activeProductIds}
+            productById={productById}
+            selectedProductIds={requiredProductIds}
+            excludedProductIds={excludedForRequired}
+            orphanedDeletedKeys={requiredOrphanedKeys}
+            search={requiredSearch}
+            onSearchChange={setRequiredSearch}
+            disabled={isBusy}
+            onToggleProduct={toggleRequiredProduct}
+            onRemoveProduct={(productId) => {
+              if (isBusy) {
+                return;
+              }
+
+              setRequiredProductIds((current) => {
+                const next = new Set(current);
+                next.delete(productId);
+                return next;
+              });
+            }}
+            onRemoveOrphaned={(key) => {
+              if (isBusy) {
+                return;
+              }
+
+              setRequiredOrphanedKeys((current) =>
+                current.filter((entry) => entry !== key),
+              );
+            }}
+          />
+        </section>
+
+        <section className="recipe-form__ingredient-section">
+          <div className="recipe-form__section-heading">
+            <h3 className="recipe-form__section-title">Одно из (группы)</h3>
+          </div>
+
+          {groups.length === 0 ? (
+            <p className="recipe-form__hint">
+              Добавьте группу, если нужен выбор — например, мясо или гарнир.
+            </p>
+          ) : (
+            <div className="recipe-form__groups">
+              {groups.map((group, index) => (
+                <div key={group.clientId} className="recipe-form__group">
+                  <div className="recipe-form__group-header">
+                    <span className="recipe-form__group-index">
+                      Группа {index + 1}
+                    </span>
+                    <button
+                      type="button"
+                      className="recipe-form__group-remove"
+                      onClick={() => removeGroup(group.clientId)}
+                      disabled={isBusy}
+                    >
+                      × Удалить группу
+                    </button>
+                  </div>
+
+                  <div className="recipe-form__field">
+                    <label
+                      className="recipe-form__label"
+                      htmlFor={`group-label-${group.clientId}`}
+                    >
+                      Название группы
+                    </label>
+                    <input
+                      id={`group-label-${group.clientId}`}
+                      className="recipe-form__input"
+                      value={group.label}
+                      onChange={(event) =>
+                        updateGroupLabel(group.clientId, event.target.value)
+                      }
+                      disabled={isBusy}
+                      placeholder="Мясо"
+                    />
+                  </div>
+
+                  <IngredientPicker
+                    pickerId={`group-picker-${group.clientId}`}
+                    products={products}
+                    activeProductIds={activeProductIds}
+                    productById={productById}
+                    selectedProductIds={group.selectedProductIds}
+                    excludedProductIds={getExcludedForGroup(group.clientId)}
+                    orphanedDeletedKeys={group.orphanedDeletedKeys}
+                    search={groupSearches[group.clientId] ?? ''}
+                    onSearchChange={(value) =>
+                      setGroupSearches((current) => ({
+                        ...current,
+                        [group.clientId]: value,
+                      }))
+                    }
+                    disabled={isBusy}
+                    onToggleProduct={(productId) =>
+                      toggleGroupProduct(group.clientId, productId)
+                    }
+                    onRemoveProduct={(productId) => {
+                      if (isBusy) {
+                        return;
+                      }
+
+                      setGroups((current) =>
+                        current.map((entry) => {
+                          if (entry.clientId !== group.clientId) {
+                            return entry;
+                          }
+
+                          const nextIds = new Set(entry.selectedProductIds);
+                          nextIds.delete(productId);
+                          return { ...entry, selectedProductIds: nextIds };
+                        }),
+                      );
+                    }}
+                    onRemoveOrphaned={(key) => {
+                      if (isBusy) {
+                        return;
+                      }
+
+                      setGroups((current) =>
+                        current.map((entry) => {
+                          if (entry.clientId !== group.clientId) {
+                            return entry;
+                          }
+
+                          return {
+                            ...entry,
+                            orphanedDeletedKeys: entry.orphanedDeletedKeys.filter(
+                              (entryKey) => entryKey !== key,
+                            ),
+                          };
+                        }),
+                      );
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            type="button"
+            className="recipe-form__add-group"
+            onClick={addGroup}
+            disabled={isBusy}
+          >
+            + Добавить группу
+          </button>
+        </section>
 
         <div className="recipe-form__actions">
           <button

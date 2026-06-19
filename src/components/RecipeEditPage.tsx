@@ -13,7 +13,6 @@ interface RecipeEditPageProps {
   products: Product[];
   activeProductIds: Set<string>;
   initialValues: RecipeFormValues;
-  initialDeletedIngredientCount: number;
   onSave: (values: RecipeFormValues) => Promise<{ error: string | null }>;
   onDelete: () => Promise<{ error: string | null }>;
   onBack: () => void;
@@ -23,7 +22,6 @@ export function RecipeEditPage({
   products,
   activeProductIds,
   initialValues,
-  initialDeletedIngredientCount,
   onSave,
   onDelete,
   onBack,
@@ -52,7 +50,6 @@ export function RecipeEditPage({
         products={products}
         activeProductIds={activeProductIds}
         initialValues={initialValues}
-        initialDeletedIngredientCount={initialDeletedIngredientCount}
         onSave={onSave}
         onDelete={onDelete}
         onClose={onBack}

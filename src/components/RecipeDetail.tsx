@@ -1,18 +1,20 @@
 import {
   buildRecipeStatusContext,
   classifyRecipe,
-  getIngredientStatuses,
+  formatMissingLabels,
+  getGroupStatuses,
+  getRequiredStatuses,
   type IngredientAvailabilityStatus,
   type IngredientStatusEntry,
 } from '@/lib/recipeStatus';
 import { getMealTypeSingularLabel } from '@/lib/recipeMealTime';
 import type { Product } from '@/types/product';
-import type { RecipeWithIngredients } from '@/types/recipe';
+import type { RecipeFull } from '@/types/recipe';
 
 import './RecipeDetail.css';
 
 interface RecipeDetailProps {
-  recipe: RecipeWithIngredients;
+  recipe: RecipeFull;
   activeProducts: Product[];
   finishedProducts: Product[];
   onEdit: () => void;
@@ -79,10 +81,23 @@ export function RecipeDetail({
     finishedProducts,
   );
   const classifiedRecipe = classifyRecipe(recipe, statusContext);
-  const ingredientStatuses = sortIngredientStatuses(
-    getIngredientStatuses(recipe, statusContext),
+  const requiredStatuses = getRequiredStatuses(recipe, statusContext).sort(
+    (left, right) => {
+      if (left.status === 'finished' && right.status !== 'finished') {
+        return -1;
+      }
+
+      if (right.status === 'finished' && left.status !== 'finished') {
+        return 1;
+      }
+
+      return 0;
+    },
   );
+  const groupStatuses = getGroupStatuses(recipe, statusContext);
   const cookTime = formatCookTime(recipe.cook_time_minutes);
+  const hasRequired = requiredStatuses.length > 0;
+  const hasGroups = groupStatuses.length > 0;
 
   return (
     <div className="recipe-detail">
@@ -108,29 +123,91 @@ export function RecipeDetail({
         </button>
       </div>
 
+      {classifiedRecipe.status === 'ready' &&
+        classifiedRecipe.readyCombinationLabel && (
+          <div
+            className="recipe-detail__alert recipe-detail__alert--ready"
+            role="status"
+          >
+            Можно сейчас: {classifiedRecipe.readyCombinationLabel}
+          </div>
+        )}
+
       {classifiedRecipe.status === 'broken' && (
         <div className="recipe-detail__alert" role="status">
           Нужно поправить: замените удалённые ингредиенты
         </div>
       )}
 
+      {classifiedRecipe.status === 'missing' && (
+        <div className="recipe-detail__alert recipe-detail__alert--missing" role="status">
+          Не хватает:{' '}
+          {formatMissingLabels(
+            classifiedRecipe.missingIngredients,
+            classifiedRecipe.missingGroups,
+          )}
+        </div>
+      )}
+
       <section className="recipe-detail__section">
         <h3 className="recipe-detail__section-title">Ингредиенты</h3>
-        <ul className="recipe-detail__ingredients">
-          {ingredientStatuses.map((entry, index) => (
-            <li
-              key={`${recipe.id}-${entry.product?.id ?? 'deleted'}-${index}`}
-              className={`recipe-detail__ingredient recipe-detail__ingredient--${entry.status}`}
-            >
-              <span className="recipe-detail__ingredient-icon" aria-hidden>
-                {ingredientStatusIcon(entry.status)}
-              </span>
-              <span className="recipe-detail__ingredient-name">
-                {ingredientStatusLabel(entry.status, entry.product?.name ?? null)}
-              </span>
-            </li>
-          ))}
-        </ul>
+
+        {hasRequired && (
+          <div className="recipe-detail__ingredient-block">
+            <h4 className="recipe-detail__ingredient-block-title">Обязательно</h4>
+            <ul className="recipe-detail__ingredients">
+              {requiredStatuses.map((entry, index) => (
+                <li
+                  key={`${recipe.id}-required-${entry.product_id ?? 'deleted'}-${index}`}
+                  className={`recipe-detail__ingredient recipe-detail__ingredient--${entry.status}`}
+                >
+                  <span className="recipe-detail__ingredient-icon" aria-hidden>
+                    {ingredientStatusIcon(entry.status)}
+                  </span>
+                  <span className="recipe-detail__ingredient-name">
+                    {ingredientStatusLabel(
+                      entry.status,
+                      entry.product?.name ?? null,
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {groupStatuses.map((groupEntry) => (
+          <div
+            key={groupEntry.group.id}
+            className="recipe-detail__ingredient-block"
+          >
+            <h4 className="recipe-detail__ingredient-block-title">
+              {groupEntry.group.label} (одно из)
+            </h4>
+            <ul className="recipe-detail__ingredients">
+              {sortIngredientStatuses(groupEntry.options).map((entry, index) => (
+                <li
+                  key={`${recipe.id}-group-${groupEntry.group.id}-${entry.product?.id ?? 'deleted'}-${index}`}
+                  className={`recipe-detail__ingredient recipe-detail__ingredient--${entry.status}`}
+                >
+                  <span className="recipe-detail__ingredient-icon" aria-hidden>
+                    {ingredientStatusIcon(entry.status)}
+                  </span>
+                  <span className="recipe-detail__ingredient-name">
+                    {ingredientStatusLabel(
+                      entry.status,
+                      entry.product?.name ?? null,
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        {!hasRequired && !hasGroups && (
+          <p className="recipe-detail__empty-ingredients">Нет ингредиентов</p>
+        )}
       </section>
 
       {recipe.instructions.trim() && (
