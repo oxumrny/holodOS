@@ -4,6 +4,7 @@ import { ProductQueryBar } from '@/components/ProductQueryBar';
 import { ErrorBanner } from '@/components/ErrorBanner';
 import { ProductList } from '@/components/ProductList';
 import { RecipeDetail } from '@/components/RecipeDetail';
+import { RecipeEditPage } from '@/components/RecipeEditPage';
 import {
   RecipeForm,
   type RecipeFormHandle,
@@ -34,12 +35,11 @@ import './App.css';
 
 type ProductTab = 'active' | 'finished';
 type Tab = ProductTab | 'recipes';
-type View = 'main' | 'settings';
+type View = 'main' | 'settings' | 'recipeEdit';
 
 type RecipeModalState =
   | { view: 'detail'; recipeId: string }
-  | { view: 'create' }
-  | { view: 'edit'; recipeId: string };
+  | { view: 'create' };
 
 function buildCatalogProducts(
   activeProducts: Product[],
@@ -93,6 +93,7 @@ export default function App() {
   );
   const [recipeModalState, setRecipeModalState] =
     useState<RecipeModalState | null>(null);
+  const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
   const recipeFormRef = useRef<RecipeFormHandle>(null);
 
   const active = useProducts('active');
@@ -129,6 +130,17 @@ export default function App() {
       ) ?? null
     );
   }, [recipeModalState, recipesState.recipes]);
+
+  const editingRecipe = useMemo(() => {
+    if (!editingRecipeId) {
+      return null;
+    }
+
+    return (
+      recipesState.recipes.find((recipe) => recipe.id === editingRecipeId) ??
+      null
+    );
+  }, [editingRecipeId, recipesState.recipes]);
 
   useEffect(() => {
     void migrateFavoriteProductsFromLocalStorage().then(() => {
@@ -283,11 +295,18 @@ export default function App() {
   };
 
   const handleOpenEditRecipe = (recipeId: string) => {
-    setRecipeModalState({ view: 'edit', recipeId });
+    setRecipeModalState(null);
+    setEditingRecipeId(recipeId);
+    setView('recipeEdit');
   };
 
   const handleCloseRecipeModal = () => {
     setRecipeModalState(null);
+  };
+
+  const handleBackFromRecipeEdit = () => {
+    setEditingRecipeId(null);
+    setView('main');
   };
 
   const handleSaveRecipe = async (values: RecipeFormValues) => {
@@ -307,35 +326,39 @@ export default function App() {
       return { error: result.error };
     }
 
-    if (recipeModalState?.view === 'edit') {
-      const result = await recipesState.updateRecipe(
-        recipeModalState.recipeId,
-        values.title,
-        values.mealType,
-        values.instructions,
-        values.cookTimeMinutes,
-        values.productIds,
-      );
-
-      if (!result.error) {
-        handleCloseRecipeModal();
-      }
-
-      return { error: result.error };
-    }
-
     return { error: null };
   };
 
-  const handleDeleteRecipe = async () => {
-    if (recipeModalState?.view !== 'edit') {
+  const handleSaveEditingRecipe = async (values: RecipeFormValues) => {
+    if (!editingRecipeId) {
       return { error: null };
     }
 
-    const result = await recipesState.deleteRecipe(recipeModalState.recipeId);
+    const result = await recipesState.updateRecipe(
+      editingRecipeId,
+      values.title,
+      values.mealType,
+      values.instructions,
+      values.cookTimeMinutes,
+      values.productIds,
+    );
 
     if (!result.error) {
-      handleCloseRecipeModal();
+      handleBackFromRecipeEdit();
+    }
+
+    return { error: result.error };
+  };
+
+  const handleDeleteEditingRecipe = async () => {
+    if (!editingRecipeId) {
+      return { error: null };
+    }
+
+    const result = await recipesState.deleteRecipe(editingRecipeId);
+
+    if (!result.error) {
+      handleBackFromRecipeEdit();
     }
 
     return { error: result.error };
@@ -346,16 +369,12 @@ export default function App() {
       return null;
     }
 
-    if (
-      (recipeModalState.view === 'detail' ||
-        recipeModalState.view === 'edit') &&
-      !selectedRecipe
-    ) {
+    if (recipeModalState.view === 'detail' && !selectedRecipe) {
       return null;
     }
 
     const overlayCloseHandler = () => {
-      if (recipeModalState.view === 'create' || recipeModalState.view === 'edit') {
+      if (recipeModalState.view === 'create') {
         recipeFormRef.current?.requestClose();
         return;
       }
@@ -366,14 +385,21 @@ export default function App() {
     const dialogLabelledBy =
       recipeModalState.view === 'create'
         ? 'recipe-form-create-title'
-        : recipeModalState.view === 'edit'
-          ? 'recipe-form-edit-title'
-          : 'recipe-detail-title';
+        : 'recipe-detail-title';
+
+    const isDetailView = recipeModalState.view === 'detail';
 
     return (
-      <div className="recipe-form-overlay" onClick={overlayCloseHandler}>
+      <div
+        className={`recipe-form-overlay${
+          isDetailView ? ' recipe-form-overlay--centered' : ''
+        }`}
+        onClick={overlayCloseHandler}
+      >
         <div
-          className="recipe-form-modal"
+          className={`recipe-form-modal${
+            isDetailView ? ' recipe-form-modal--centered' : ''
+          }`}
           role="dialog"
           aria-modal="true"
           aria-labelledby={dialogLabelledBy}
@@ -389,34 +415,16 @@ export default function App() {
             />
           ) : (
             <RecipeForm
-              key={
-                recipeModalState.view === 'create'
-                  ? 'create'
-                  : `edit-${recipeModalState.recipeId}`
-              }
+              key="create"
               ref={recipeFormRef}
-              mode={recipeModalState.view === 'create' ? 'create' : 'edit'}
+              mode="create"
               products={catalogProducts}
               activeProductIds={activeProductIds}
-              initialValues={
-                recipeModalState.view === 'edit' && selectedRecipe
-                  ? recipeToFormValues(selectedRecipe)
-                  : {
-                      ...emptyRecipeFormValues,
-                      mealType: getPrimaryMealType(),
-                    }
-              }
-              initialDeletedIngredientCount={
-                recipeModalState.view === 'edit' && selectedRecipe
-                  ? countDeletedIngredients(selectedRecipe)
-                  : 0
-              }
+              initialValues={{
+                ...emptyRecipeFormValues,
+                mealType: getPrimaryMealType(),
+              }}
               onSave={handleSaveRecipe}
-              onDelete={
-                recipeModalState.view === 'edit'
-                  ? handleDeleteRecipe
-                  : undefined
-              }
               onClose={handleCloseRecipeModal}
             />
           )}
@@ -485,6 +493,16 @@ export default function App() {
 
       {view === 'settings' ? (
         <Settings onBack={handleBackFromSettings} />
+      ) : view === 'recipeEdit' && editingRecipe ? (
+        <RecipeEditPage
+          products={catalogProducts}
+          activeProductIds={activeProductIds}
+          initialValues={recipeToFormValues(editingRecipe)}
+          initialDeletedIngredientCount={countDeletedIngredients(editingRecipe)}
+          onSave={handleSaveEditingRecipe}
+          onDelete={handleDeleteEditingRecipe}
+          onBack={handleBackFromRecipeEdit}
+        />
       ) : (
         <>
       <main className="app__main">

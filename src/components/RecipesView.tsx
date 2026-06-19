@@ -97,10 +97,6 @@ function RecipeRow({
           </p>
         )}
 
-        {variant === 'missing' && (
-          <p className="recipes-view__row-caption">в списке покупок</p>
-        )}
-
         {variant === 'broken' && (
           <p className="recipes-view__row-meta recipes-view__row-meta--broken">
             {deletedCount === 1

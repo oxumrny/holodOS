@@ -1,0 +1,23 @@
+.recipe-edit-page__top {
+  margin-bottom: 16px;
+}
+
+.recipe-edit-page__back {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1b7fc4;
+  cursor: pointer;
+}
+
+.recipe-edit-page__back:hover {
+  text-decoration: underline;
+}
+
+.recipe-edit-page .recipe-form__picker {
+  max-height: min(320px, 40vh);
+}

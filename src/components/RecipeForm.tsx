@@ -25,6 +25,7 @@ export interface RecipeFormValues {
 
 interface RecipeFormProps {
   mode: 'create' | 'edit';
+  layout?: 'modal' | 'page';
   products: Product[];
   activeProductIds: Set<string>;
   initialValues: RecipeFormValues;
@@ -53,6 +54,7 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
   function RecipeForm(
     {
       mode,
+      layout = 'modal',
       products,
       activeProductIds,
       initialValues,
@@ -264,15 +266,17 @@ export const RecipeForm = forwardRef<RecipeFormHandle, RecipeFormProps>(
           <h2 className="recipe-form__heading" id={dialogTitleId}>
             {mode === 'create' ? 'Новый рецепт' : 'Редактировать рецепт'}
           </h2>
-          <button
-            type="button"
-            className="recipe-form__close"
-            onClick={handleCloseRequest}
-            disabled={isBusy}
-            aria-label="Закрыть"
-          >
-            ×
-          </button>
+          {layout === 'modal' && (
+            <button
+              type="button"
+              className="recipe-form__close"
+              onClick={handleCloseRequest}
+              disabled={isBusy}
+              aria-label="Закрыть"
+            >
+              ×
+            </button>
+          )}
         </div>
 
         {error && (

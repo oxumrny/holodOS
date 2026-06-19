@@ -210,12 +210,6 @@
   color: #b45309;
 }
 
-.recipes-view__row-caption {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #8a9bab;
-}
-
 .recipes-view__centered {
   display: flex;
   flex-direction: column;
