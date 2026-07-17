@@ -197,6 +197,7 @@ supabase/
 vercel.json
 ROADMAP.md
 RECIPES_IMPLEMENTATION.md
+IOS_2.0.md                   — ТЗ нативного iOS 2.0 (ветка cursor/ios-2.0)
 ```
 
 ### Архитектурные особенности
@@ -350,6 +351,8 @@ npm run preview
 Краткая эволюция: Expo → веб (Vite); категории и CRUD → UX (поиск, компактные карточки, липкие категории, мастхэв) → **магазины, blacklist, фильтр списка покупок** → **рецепты** (ready / missing / broken, завтрак/обед по времени суток, CRUD).
 
 Подробное ТЗ по рецептам — **[RECIPES_IMPLEMENTATION.md](./RECIPES_IMPLEMENTATION.md)**.
+
+Нативное iOS 2.0 (SwiftUI, отдельная ветка `cursor/ios-2.0`) — **[IOS_2.0.md](./IOS_2.0.md)**.
 
 Будущие фичи — в **[ROADMAP.md](./ROADMAP.md)** (карточка продукта из списка, preferred store, маршрут на день, bulk-exclusions и др.).
 
