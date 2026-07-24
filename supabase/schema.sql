@@ -4,6 +4,7 @@ create table if not exists products (
   status text not null default 'active' check (status in ('active', 'finished')),
   category text not null default 'прочее',
   is_favorite boolean not null default false,
+  is_paused boolean not null default false,
   created_at timestamptz not null default now(),
   finished_at timestamptz
 );
@@ -14,6 +15,7 @@ create table if not exists products (
 create index if not exists products_status_idx on products (status);
 create index if not exists products_finished_at_idx on products (finished_at desc nulls last);
 create index if not exists products_is_favorite_idx on products (is_favorite) where is_favorite = true;
+create index if not exists products_is_paused_idx on products (is_paused) where is_paused = true;
 
 alter table products enable row level security;
 

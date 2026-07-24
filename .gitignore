@@ -4,3 +4,10 @@ dist/
 .env.local
 .DS_Store
 tsconfig.tsbuildinfo
+
+# iOS
+ios/HolodOS/Configs/Secrets.xcconfig
+**/DerivedData/
+**/*.xcuserstate
+**/xcuserdata/
+.vercel-cli-cache/

@@ -1,0 +1,457 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		27CB9D7027A04B43A0608CF4 /* ProductsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69A30172BD7A4AA1B0A8FAE6 /* ProductsStore.swift */; };
+		37BBF7AA1089443BABF68C3B /* Product.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94A2FE8A7D94BE995F95E15 /* Product.swift */; };
+		41A029403B1D4CBEBFA0AC6A /* FridgeListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84ADD743DA24428692D3595A /* FridgeListView.swift */; };
+		50A6350E2BB14DA7BF353965 /* ShoppingListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598F04CA3AF840B88DBAE654 /* ShoppingListView.swift */; };
+		51B7461F3CC25EB80C464076 /* ShoppingProgressTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C857204DD36FC90D575187 /* ShoppingProgressTracker.swift */; };
+		B5C6D7E8F9A0512345678901 /* HolodShoppingProgressBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B5C6D7E8F9401234567890 /* HolodShoppingProgressBar.swift */; };
+		B6C7D8E9F0A1623456789012 /* HolodFilledButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5B6C7D8E9F0512345678901 /* HolodFilledButton.swift */; };
+		69B47498658F46B2A13BA37E /* SupabaseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573BC27C6B5049C1B9A880F3 /* SupabaseClient.swift */; };
+		9FD21BB877F34C6E94B35A0D /* ProductGrouping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78092A45613847CE858A70B6 /* ProductGrouping.swift */; };
+		A1B2C3D4E5F6478990ABCD01 /* HolodTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A2C3D4E5F6478990ABCDEF /* HolodTheme.swift */; };
+		B3C4D5E6F7A8490123456789 /* HolodPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B3C4D5E6F7489012345678 /* HolodPlaceholderView.swift */; };
+		B4C5D6E7F8A9501234567890 /* HolodErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B4C5D6E7F851234567890 /* HolodErrorBanner.swift */; };
+		F6A7B8C9D0E142345678901 /* HolodTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F6A7B8C9D042345678901 /* HolodTabBar.swift */; };
+		AE8A30C5CE4C4F8E86620A9B /* CategoryDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B4B2B8BA6C448CA95BF038 /* CategoryDetector.swift */; };
+		B2C3D4E5F6A748901BCDEF02 /* AddProductSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2B3A4D5E6F748901BCDEF0 /* AddProductSheet.swift */; };
+		C3D4E5F6A7B849012CDEF123 /* CollapsibleSectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C950123DEF234 /* CollapsibleSectionHeader.swift */; };
+		E6F7A8B9C0D152637485960 /* HolodEdgeSwipe.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A8B9C0D1E263748596071 /* HolodEdgeSwipe.swift */; };
+		B9292595C0CF4108A2F42307 /* ProductService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39C420E8FF304BF6AC8C982A /* ProductService.swift */; };
+		C2E3035CDF314C03846BE603 /* ProductRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93A1AA640E24AE8AB86C02C /* ProductRowView.swift */; };
+		C76264902A1949AFB33E54CA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 25A30736589C482BA6D1C307 /* Assets.xcassets */; };
+		DB247DE5300AA31300EE38C2 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = B021AB8D3A4248C3A3F68E25 /* Supabase */; };
+		DE32CBABF24B42BB851AFC18 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB50742DE73E429DBC97A642 /* RootTabView.swift */; };
+		E60E2D8504844F7FAE137776 /* PausedProductsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03BAC5216435431EAFF4E7FC /* PausedProductsSection.swift */; };
+		EBE18450C7914D87BC2558C7 /* HolodOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CCB20C35FFE4147B717F2B5 /* HolodOSApp.swift */; };
+		F424635E68714D1CB4666853 /* ProductListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840CC4467FD84EF080760F80 /* ProductListView.swift */; };
+		A8B9C0D1E2F3041526374859 /* HolodTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C0D1E2F304152637485960 /* HolodTypography.swift */; };
+		C0D1E2F3041526374859601 /* Nunito-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D1E2F30415263748596012 /* Nunito-Variable.ttf */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		03BAC5216435431EAFF4E7FC /* PausedProductsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PausedProductsSection.swift; sourceTree = "<group>"; };
+		1265FADBC66B4792B20A689B /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
+		25A30736589C482BA6D1C307 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		39C420E8FF304BF6AC8C982A /* ProductService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductService.swift; sourceTree = "<group>"; };
+		48EFCF783E5C4B80ABF34CAD /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		573BC27C6B5049C1B9A880F3 /* SupabaseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClient.swift; sourceTree = "<group>"; };
+		598F04CA3AF840B88DBAE654 /* ShoppingListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingListView.swift; sourceTree = "<group>"; };
+		60C857204DD36FC90D575187 /* ShoppingProgressTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShoppingProgressTracker.swift; sourceTree = "<group>"; };
+		A4B5C6D7E8F9401234567890 /* HolodShoppingProgressBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodShoppingProgressBar.swift; sourceTree = "<group>"; };
+		A5B6C7D8E9F0512345678901 /* HolodFilledButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodFilledButton.swift; sourceTree = "<group>"; };
+		697A4007F4844BC2B4010FA7 /* HolodOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HolodOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		69A30172BD7A4AA1B0A8FAE6 /* ProductsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductsStore.swift; sourceTree = "<group>"; };
+		78092A45613847CE858A70B6 /* ProductGrouping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductGrouping.swift; sourceTree = "<group>"; };
+		840CC4467FD84EF080760F80 /* ProductListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductListView.swift; sourceTree = "<group>"; };
+		84ADD743DA24428692D3595A /* FridgeListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FridgeListView.swift; sourceTree = "<group>"; };
+		8F316565D5804D299629F245 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9CCB20C35FFE4147B717F2B5 /* HolodOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodOSApp.swift; sourceTree = "<group>"; };
+		A42468401D964039B9AA241D /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		A94A2FE8A7D94BE995F95E15 /* Product.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Product.swift; sourceTree = "<group>"; };
+		A2B3C4D5E6F7489012345678 /* HolodPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodPlaceholderView.swift; sourceTree = "<group>"; };
+		A3B4C5D6E7F851234567890 /* HolodErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodErrorBanner.swift; sourceTree = "<group>"; };
+		B1A2C3D4E5F6478990ABCDEF /* HolodTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodTheme.swift; sourceTree = "<group>"; };
+		E5F6A7B8C9D042345678901 /* HolodTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodTabBar.swift; sourceTree = "<group>"; };
+		C2B3A4D5E6F748901BCDEF0 /* AddProductSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProductSheet.swift; sourceTree = "<group>"; };
+		D4E5F6A7B8C950123DEF234 /* CollapsibleSectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollapsibleSectionHeader.swift; sourceTree = "<group>"; };
+		F7A8B9C0D1E263748596071 /* HolodEdgeSwipe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodEdgeSwipe.swift; sourceTree = "<group>"; };
+		CB50742DE73E429DBC97A642 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		F5B4B2B8BA6C448CA95BF038 /* CategoryDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryDetector.swift; sourceTree = "<group>"; };
+		F93A1AA640E24AE8AB86C02C /* ProductRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductRowView.swift; sourceTree = "<group>"; };
+		B9C0D1E2F304152637485960 /* HolodTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolodTypography.swift; sourceTree = "<group>"; };
+		D1E2F30415263748596012 /* Nunito-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Nunito-Variable.ttf"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		188DA2C86A4B4EC5936BD167 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DB247DE5300AA31300EE38C2 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1955D236E5F944C782D41933 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				A94A2FE8A7D94BE995F95E15 /* Product.swift */,
+				39C420E8FF304BF6AC8C982A /* ProductService.swift */,
+				F5B4B2B8BA6C448CA95BF038 /* CategoryDetector.swift */,
+				573BC27C6B5049C1B9A880F3 /* SupabaseClient.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		20D6A65F7CFC492B8C39A8A3 /* Shopping */ = {
+			isa = PBXGroup;
+			children = (
+				598F04CA3AF840B88DBAE654 /* ShoppingListView.swift */,
+				60C857204DD36FC90D575187 /* ShoppingProgressTracker.swift */,
+			);
+			path = Shopping;
+			sourceTree = "<group>";
+		};
+		297A3AD41E1F48D9B604EA78 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				9CCB20C35FFE4147B717F2B5 /* HolodOSApp.swift */,
+				CB50742DE73E429DBC97A642 /* RootTabView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		352005BBD489435580E43516 /* Fridge */ = {
+			isa = PBXGroup;
+			children = (
+				84ADD743DA24428692D3595A /* FridgeListView.swift */,
+			);
+			path = Fridge;
+			sourceTree = "<group>";
+		};
+		3C9815A4D4CF424EB0B7706F = {
+			isa = PBXGroup;
+			children = (
+				A85C5C175DA14AC2AB46BD0A /* HolodOS */,
+				9539B2F1A0C4478D8EE6E682 /* Configs */,
+				DFB6E772B328429EA730C59D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		87409EDA78B645AB898C4FF5 /* SharedProducts */ = {
+			isa = PBXGroup;
+			children = (
+				C2B3A4D5E6F748901BCDEF0 /* AddProductSheet.swift */,
+				D4E5F6A7B8C950123DEF234 /* CollapsibleSectionHeader.swift */,
+				F7A8B9C0D1E263748596071 /* HolodEdgeSwipe.swift */,
+				03BAC5216435431EAFF4E7FC /* PausedProductsSection.swift */,
+				840CC4467FD84EF080760F80 /* ProductListView.swift */,
+				69A30172BD7A4AA1B0A8FAE6 /* ProductsStore.swift */,
+				78092A45613847CE858A70B6 /* ProductGrouping.swift */,
+				F93A1AA640E24AE8AB86C02C /* ProductRowView.swift */,
+			);
+			path = SharedProducts;
+			sourceTree = "<group>";
+		};
+		93B9C6FFBA0A400C933E2278 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				20D6A65F7CFC492B8C39A8A3 /* Shopping */,
+				352005BBD489435580E43516 /* Fridge */,
+				87409EDA78B645AB898C4FF5 /* SharedProducts */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		9539B2F1A0C4478D8EE6E682 /* Configs */ = {
+			isa = PBXGroup;
+			children = (
+				48EFCF783E5C4B80ABF34CAD /* Debug.xcconfig */,
+				A42468401D964039B9AA241D /* Release.xcconfig */,
+				1265FADBC66B4792B20A689B /* Secrets.example.xcconfig */,
+			);
+			path = Configs;
+			sourceTree = "<group>";
+		};
+		A85C5C175DA14AC2AB46BD0A /* HolodOS */ = {
+			isa = PBXGroup;
+			children = (
+				297A3AD41E1F48D9B604EA78 /* App */,
+				93B9C6FFBA0A400C933E2278 /* Features */,
+				1955D236E5F944C782D41933 /* Data */,
+				D4E5F6A7B8C9480123DEF456 /* Design */,
+				E2F3041526374859601234 /* Resources */,
+				25A30736589C482BA6D1C307 /* Assets.xcassets */,
+				8F316565D5804D299629F245 /* Info.plist */,
+			);
+			path = HolodOS;
+			sourceTree = "<group>";
+		};
+		D4E5F6A7B8C9480123DEF456 /* Design */ = {
+			isa = PBXGroup;
+			children = (
+				B1A2C3D4E5F6478990ABCDEF /* HolodTheme.swift */,
+				B9C0D1E2F304152637485960 /* HolodTypography.swift */,
+				A2B3C4D5E6F7489012345678 /* HolodPlaceholderView.swift */,
+				A3B4C5D6E7F851234567890 /* HolodErrorBanner.swift */,
+				A4B5C6D7E8F9401234567890 /* HolodShoppingProgressBar.swift */,
+				A5B6C7D8E9F0512345678901 /* HolodFilledButton.swift */,
+				E5F6A7B8C9D042345678901 /* HolodTabBar.swift */,
+			);
+			path = Design;
+			sourceTree = "<group>";
+		};
+		E2F3041526374859601234 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F304152637485960123456 /* Fonts */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		F304152637485960123456 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				D1E2F30415263748596012 /* Nunito-Variable.ttf */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		DFB6E772B328429EA730C59D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				697A4007F4844BC2B4010FA7 /* HolodOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C549266FBED94D2C9E74D185 /* HolodOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BE2FA7A835CB45408F18E1F8 /* Build configuration list for PBXNativeTarget "HolodOS" */;
+			buildPhases = (
+				ADD9AD25AA9842A2ADF0A162 /* Sources */,
+				188DA2C86A4B4EC5936BD167 /* Frameworks */,
+				3AEEA00E5F0A4E2F8FA28072 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HolodOS;
+			packageProductDependencies = (
+				B021AB8D3A4248C3A3F68E25 /* Supabase */,
+			);
+			productName = HolodOS;
+			productReference = 697A4007F4844BC2B4010FA7 /* HolodOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C24C075DAFD943D7AD2C9E35 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 69F4FDA47C7A42D184E7A6A0 /* Build configuration list for PBXProject "HolodOS" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = ru;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				ru,
+			);
+			mainGroup = 3C9815A4D4CF424EB0B7706F;
+			packageReferences = (
+				0750C988B89349E29FBF39B0 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			productRefGroup = DFB6E772B328429EA730C59D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C549266FBED94D2C9E74D185 /* HolodOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3AEEA00E5F0A4E2F8FA28072 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C76264902A1949AFB33E54CA /* Assets.xcassets in Resources */,
+				C0D1E2F3041526374859601 /* Nunito-Variable.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		ADD9AD25AA9842A2ADF0A162 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E60E2D8504844F7FAE137776 /* PausedProductsSection.swift in Sources */,
+				F424635E68714D1CB4666853 /* ProductListView.swift in Sources */,
+				A1B2C3D4E5F6478990ABCD01 /* HolodTheme.swift in Sources */,
+				B3C4D5E6F7A8490123456789 /* HolodPlaceholderView.swift in Sources */,
+				B4C5D6E7F8A9501234567890 /* HolodErrorBanner.swift in Sources */,
+				B5C6D7E8F9A0512345678901 /* HolodShoppingProgressBar.swift in Sources */,
+				B6C7D8E9F0A1623456789012 /* HolodFilledButton.swift in Sources */,
+				F6A7B8C9D0E142345678901 /* HolodTabBar.swift in Sources */,
+				B2C3D4E5F6A748901BCDEF02 /* AddProductSheet.swift in Sources */,
+				C3D4E5F6A7B849012CDEF123 /* CollapsibleSectionHeader.swift in Sources */,
+				E6F7A8B9C0D152637485960 /* HolodEdgeSwipe.swift in Sources */,
+				A8B9C0D1E2F3041526374859 /* HolodTypography.swift in Sources */,
+				27CB9D7027A04B43A0608CF4 /* ProductsStore.swift in Sources */,
+				EBE18450C7914D87BC2558C7 /* HolodOSApp.swift in Sources */,
+				DE32CBABF24B42BB851AFC18 /* RootTabView.swift in Sources */,
+				50A6350E2BB14DA7BF353965 /* ShoppingListView.swift in Sources */,
+				51B7461F3CC25EB80C464076 /* ShoppingProgressTracker.swift in Sources */,
+				41A029403B1D4CBEBFA0AC6A /* FridgeListView.swift in Sources */,
+				9FD21BB877F34C6E94B35A0D /* ProductGrouping.swift in Sources */,
+				C2E3035CDF314C03846BE603 /* ProductRowView.swift in Sources */,
+				37BBF7AA1089443BABF68C3B /* Product.swift in Sources */,
+				B9292595C0CF4108A2F42307 /* ProductService.swift in Sources */,
+				AE8A30C5CE4C4F8E86620A9B /* CategoryDetector.swift in Sources */,
+				69B47498658F46B2A13BA37E /* SupabaseClient.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		24DC3AFDEF0047CA968B87C6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 48EFCF783E5C4B80ABF34CAD /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DFAK7479VW;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_EXPAND_BUILD_SETTINGS = YES;
+				INFOPLIST_FILE = HolodOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = holodOS;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.xenbi.holodos.app;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		4A27C49E184041A98D60639F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 48EFCF783E5C4B80ABF34CAD /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B76206956D294A0399B9BE3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A42468401D964039B9AA241D /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = DFAK7479VW;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_EXPAND_BUILD_SETTINGS = YES;
+				INFOPLIST_FILE = HolodOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = holodOS;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.xenbi.holodos.app;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		E858DC405F984A52BCBF1369 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A42468401D964039B9AA241D /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		69F4FDA47C7A42D184E7A6A0 /* Build configuration list for PBXProject "HolodOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4A27C49E184041A98D60639F /* Debug */,
+				E858DC405F984A52BCBF1369 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BE2FA7A835CB45408F18E1F8 /* Build configuration list for PBXNativeTarget "HolodOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24DC3AFDEF0047CA968B87C6 /* Debug */,
+				B76206956D294A0399B9BE3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0750C988B89349E29FBF39B0 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B021AB8D3A4248C3A3F68E25 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0750C988B89349E29FBF39B0 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = C24C075DAFD943D7AD2C9E35 /* Project object */;
+}
