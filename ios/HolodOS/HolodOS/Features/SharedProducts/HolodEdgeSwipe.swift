@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum HolodSwipeEdge {
     case leading
@@ -40,6 +41,12 @@ private struct RowSizeKey: PreferenceKey {
     }
 }
 
+private enum SwipeDragAxis {
+    case undecided
+    case horizontal
+    case vertical
+}
+
 struct HolodSwipeButton: View {
     let style: HolodSwipeStyle
 
@@ -57,6 +64,111 @@ struct HolodSwipeButton: View {
     }
 }
 
+// MARK: - iOS 18+ pan (Apple-recommended scroll-safe path)
+
+/// UIKit pan wired through SwiftUI's gesture system.
+/// `shouldBegin` rejects vertical pans so `List` scrolling stays exclusive.
+@available(iOS 18.0, *)
+private struct HolodSwipePanGesture: UIGestureRecognizerRepresentable {
+    let edge: HolodSwipeEdge
+    let maximumReveal: CGFloat
+    let onChanged: (CGFloat) -> Void
+    let onEnded: (CGFloat) -> Void
+
+    func makeCoordinator(converter: CoordinateSpaceConverter) -> Coordinator {
+        Coordinator(edge: edge, maximumReveal: maximumReveal, onChanged: onChanged, onEnded: onEnded)
+    }
+
+    func makeUIGestureRecognizer(context: Context) -> UIPanGestureRecognizer {
+        let pan = UIPanGestureRecognizer()
+        pan.delegate = context.coordinator
+        pan.maximumNumberOfTouches = 1
+        pan.cancelsTouchesInView = false
+        return pan
+    }
+
+    func updateUIGestureRecognizer(_ recognizer: UIPanGestureRecognizer, context: Context) {
+        context.coordinator.edge = edge
+        context.coordinator.maximumReveal = maximumReveal
+        context.coordinator.onChanged = onChanged
+        context.coordinator.onEnded = onEnded
+        recognizer.delegate = context.coordinator
+    }
+
+    func handleUIGestureRecognizerAction(
+        _ recognizer: UIPanGestureRecognizer,
+        context: Context
+    ) {
+        context.coordinator.handle(recognizer)
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var edge: HolodSwipeEdge
+        var maximumReveal: CGFloat
+        var onChanged: (CGFloat) -> Void
+        var onEnded: (CGFloat) -> Void
+
+        init(
+            edge: HolodSwipeEdge,
+            maximumReveal: CGFloat,
+            onChanged: @escaping (CGFloat) -> Void,
+            onEnded: @escaping (CGFloat) -> Void
+        ) {
+            self.edge = edge
+            self.maximumReveal = maximumReveal
+            self.onChanged = onChanged
+            self.onEnded = onEnded
+        }
+
+        func handle(_ gesture: UIPanGestureRecognizer) {
+            let translation = gesture.translation(in: gesture.view)
+            let reveal = Self.reveal(for: translation, edge: edge, maximum: maximumReveal)
+
+            switch gesture.state {
+            case .began, .changed:
+                onChanged(reveal)
+            case .ended, .cancelled, .failed:
+                onEnded(reveal)
+            default:
+                break
+            }
+        }
+
+        static func reveal(for translation: CGPoint, edge: HolodSwipeEdge, maximum: CGFloat) -> CGFloat {
+            switch edge {
+            case .leading:
+                return min(max(0, translation.x), maximum)
+            case .trailing:
+                return min(max(0, -translation.x), maximum)
+            }
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
+            let velocity = pan.velocity(in: pan.view)
+
+            // Fail early on vertical so List keeps exclusive scroll ownership.
+            guard abs(velocity.x) > abs(velocity.y) else { return false }
+
+            switch edge {
+            case .leading:
+                return velocity.x > 0
+            case .trailing:
+                return velocity.x < 0
+            }
+        }
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            false
+        }
+    }
+}
+
+// MARK: - Modifier
+
 struct HolodEdgeSwipeModifier: ViewModifier {
     let style: HolodSwipeStyle
     let accessibilityLabel: String
@@ -65,6 +177,7 @@ struct HolodEdgeSwipeModifier: ViewModifier {
     @Environment(\.holodListAppearance) private var appearance
     @State private var reveal: CGFloat = 0
     @State private var rowSize: CGSize = .zero
+    @State private var legacyAxis: SwipeDragAxis = .undecided
 
     private let actionGap: CGFloat = 10
 
@@ -73,12 +186,12 @@ struct HolodEdgeSwipeModifier: ViewModifier {
         return rowSize.height / 1.5
     }
 
-    private var actionSize: CGFloat { buttonHeight }
+    private var actionSize: CGFloat { max(buttonHeight, 1) }
 
     private var triggerThreshold: CGFloat { actionSize * 0.55 }
 
     func body(content: Content) -> some View {
-        ZStack(alignment: style.edge == .leading ? .leading : .trailing) {
+        let row = ZStack(alignment: style.edge == .leading ? .leading : .trailing) {
             HolodSwipeButton(style: style)
                 .frame(width: actionSize, height: buttonHeight)
                 .offset(x: buttonOffset)
@@ -93,9 +206,28 @@ struct HolodEdgeSwipeModifier: ViewModifier {
                 }
         }
         .clipShape(Rectangle())
+        .contentShape(Rectangle())
         .onPreferenceChange(RowSizeKey.self) { rowSize = $0 }
-        .simultaneousGesture(dragGesture)
-        .accessibilityAction(named: Text(accessibilityLabel), onAction)
+
+        return Group {
+            if #available(iOS 18.0, *) {
+                row.gesture(
+                    HolodSwipePanGesture(
+                        edge: style.edge,
+                        maximumReveal: actionSize,
+                        onChanged: { reveal = $0 },
+                        onEnded: handleEnded
+                    )
+                )
+            } else {
+                // iOS 17: SwiftUI drag is fine; the List conflict is mainly iOS 18+.
+                row.simultaneousGesture(legacyDragGesture)
+            }
+        }
+        .accessibilityAction(named: Text(accessibilityLabel)) {
+            playCommitHaptic()
+            onAction()
+        }
     }
 
     private var contentOffset: CGFloat {
@@ -113,10 +245,17 @@ struct HolodEdgeSwipeModifier: ViewModifier {
         }
     }
 
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 14, coordinateSpace: .local)
+    private var legacyDragGesture: some Gesture {
+        DragGesture(minimumDistance: 20, coordinateSpace: .local)
             .onChanged { value in
-                guard isHorizontalDrag(value) else { return }
+                if legacyAxis == .undecided {
+                    let dx = abs(value.translation.width)
+                    let dy = abs(value.translation.height)
+                    guard dx > 10 || dy > 10 else { return }
+                    legacyAxis = dx > dy * 1.35 ? .horizontal : .vertical
+                }
+
+                guard legacyAxis == .horizontal else { return }
 
                 switch style.edge {
                 case .leading:
@@ -125,33 +264,44 @@ struct HolodEdgeSwipeModifier: ViewModifier {
                     reveal = min(max(0, -value.translation.width), actionSize)
                 }
             }
-            .onEnded { value in
-                guard isHorizontalDrag(value) else {
-                    resetReveal()
+            .onEnded { _ in
+                defer { legacyAxis = .undecided }
+                guard legacyAxis == .horizontal else {
+                    if reveal > 0 { resetReveal() }
                     return
                 }
-
-                if reveal >= triggerThreshold {
-                    commitAction()
-                } else {
-                    resetReveal()
-                }
+                handleEnded(reveal)
             }
     }
 
-    private func isHorizontalDrag(_ value: DragGesture.Value) -> Bool {
-        abs(value.translation.width) > abs(value.translation.height)
+    private func handleEnded(_ value: CGFloat) {
+        if value >= triggerThreshold {
+            commitAction()
+        } else if value > 0 {
+            resetReveal()
+        } else {
+            reveal = 0
+        }
     }
 
     private func commitAction() {
+        playCommitHaptic()
+
+        // Fill the action quickly (keeps swipe feeling snappy)...
         withAnimation(.easeOut(duration: 0.16)) {
             reveal = actionSize
         }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+        // ...then hold briefly before the row leaves the list.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
             onAction()
-            resetReveal()
+            reveal = 0
         }
+    }
+
+    private func playCommitHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.prepare()
+        generator.impactOccurred()
     }
 
     private func resetReveal() {

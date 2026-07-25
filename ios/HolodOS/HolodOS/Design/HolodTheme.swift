@@ -2,7 +2,7 @@ import SwiftUI
 
 extension Color {
     static let holodMineShaft = Color(red: 45 / 255, green: 45 / 255, blue: 45 / 255)
-    static let holodAkaroa = Color(red: 215 / 255, green: 201 / 255, blue: 174 / 255)
+    static let holodAkaroa = Color(red: 224 / 255, green: 210 / 255, blue: 184 / 255)
     static let holodBarleyCorn = Color(red: 166 / 255, green: 135 / 255, blue: 99 / 255)
     static let holodWhiteRock = Color(red: 234 / 255, green: 224 / 255, blue: 210 / 255)
     /// Точки незаполненной части прогресс-бара — светлее White Rock.
@@ -136,5 +136,12 @@ extension View {
     func holodPaperBackground(_ color: Color, grainOpacity: Double = 0.042) -> some View {
         background(color)
             .overlay { HolodGrainOverlay(opacity: grainOpacity) }
+    }
+
+    func holodPaperBackground(
+        _ appearance: HolodListAppearance,
+        grainOpacity: Double = 0.042
+    ) -> some View {
+        holodPaperBackground(appearance.background, grainOpacity: grainOpacity)
     }
 }

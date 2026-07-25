@@ -98,7 +98,7 @@ struct ProductListView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .holodPaperBackground(appearance.background)
+        .holodPaperBackground(appearance, grainOpacity: 0.065)
         .environment(\.holodListAppearance, appearance)
         .overlay(alignment: .top) {
             if isShowingErrorAlert, let alertMessage {
@@ -111,23 +111,33 @@ struct ProductListView: View {
                 .padding(.top, 8)
             }
         }
+        .overlay {
+            if isShowingAddSheet {
+                AddProductSheet(
+                    listTitle: title,
+                    appearance: appearance,
+                    productName: $newProductName,
+                    onDismiss: {
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            isShowingAddSheet = false
+                        }
+                    },
+                    onAdd: {
+                        try await store.addProduct(name: newProductName, to: status)
+                        newProductName = ""
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: isShowingAddSheet)
         .animation(.easeInOut(duration: 0.2), value: isShowingErrorAlert)
+        .preference(key: HolodHidesTabBarKey.self, value: isShowingAddSheet)
         .refreshable {
             await store.refresh(status)
         }
         .task {
             await store.load(status)
-        }
-        .sheet(isPresented: $isShowingAddSheet) {
-            AddProductSheet(
-                listTitle: title,
-                appearance: appearance,
-                productName: $newProductName,
-                onAdd: {
-                    try await store.addProduct(name: newProductName, to: status)
-                    newProductName = ""
-                }
-            )
         }
         .preferredColorScheme(appearance == .fridge ? .dark : .light)
     }
@@ -164,7 +174,9 @@ struct ProductListView: View {
 
             Button {
                 newProductName = ""
-                isShowingAddSheet = true
+                withAnimation(.easeOut(duration: 0.18)) {
+                    isShowingAddSheet = true
+                }
             } label: {
                 Image(systemName: "plus")
                     .font(.holodBodyMedium)

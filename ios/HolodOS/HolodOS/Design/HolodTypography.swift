@@ -17,6 +17,7 @@ enum HolodFont {
     static var caption: Font { font("Nunito-Regular", size: 12, relativeTo: .caption1) }
     static var captionMedium: Font { font("Nunito-Medium", size: 12, relativeTo: .caption1) }
     static var caption2Semibold: Font { font("Nunito-SemiBold", size: 11, relativeTo: .caption2) }
+    static var sectionHeader: Font { font("Nunito-SemiBold", size: 14, relativeTo: .footnote) }
     static var subheadline: Font { font("Nunito-Regular", size: 15, relativeTo: .subheadline) }
 }
 
@@ -39,5 +40,6 @@ extension Font {
     static var holodCaption: Font { HolodFont.caption }
     static var holodCaptionMedium: Font { HolodFont.captionMedium }
     static var holodCaption2Semibold: Font { HolodFont.caption2Semibold }
+    static var holodSectionHeader: Font { HolodFont.sectionHeader }
     static var holodSubheadline: Font { HolodFont.subheadline }
 }

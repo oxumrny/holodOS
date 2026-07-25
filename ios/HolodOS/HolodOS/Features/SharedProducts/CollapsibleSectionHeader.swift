@@ -16,31 +16,34 @@ struct CollapsibleSectionHeader: View {
     @Environment(\.holodListAppearance) private var appearance
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if showsTopDivider {
-                HolodDivider()
-                    .padding(.bottom, HolodListMetrics.sectionDividerBottomPadding)
-            }
+        // Entire band from divider → title → bottom padding is one hit target.
+        Button(action: onToggle) {
+            VStack(alignment: .leading, spacing: 0) {
+                if showsTopDivider {
+                    HolodDivider()
+                        .padding(.bottom, HolodListMetrics.sectionDividerBottomPadding)
+                }
 
-            Button(action: onToggle) {
                 HStack(spacing: 6) {
                     Text(title.uppercased())
-                        .font(.holodCaptionMedium)
+                        .font(.holodSectionHeader)
                         .tracking(0.6)
                         .foregroundStyle(appearance.secondaryText)
 
-                    Spacer()
+                    Spacer(minLength: 0)
 
                     Image(systemName: "chevron.down")
-                        .font(.holodCaption2Semibold)
+                        .font(.holodCaptionMedium)
                         .foregroundStyle(appearance.secondaryText.opacity(0.65))
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
-                .padding(.top, showsTopDivider ? 0 : 4)
-                .padding(.bottom, isExpanded ? HolodListMetrics.sectionHeaderBottomPadding : 0)
             }
-            .buttonStyle(.plain)
+            .padding(.top, showsTopDivider ? 0 : 4)
+            .padding(.bottom, HolodListMetrics.sectionHeaderBottomPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .textCase(nil)
         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
     }

@@ -7,6 +7,14 @@ enum HolodTabBarMetrics {
     static var scrollClearance: CGFloat { barHeight + bottomInset + 8 }
 }
 
+/// Child screens set this when chrome (tab bar) should hide — e.g. add-product dialog.
+struct HolodHidesTabBarKey: PreferenceKey {
+    static var defaultValue = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
+    }
+}
+
 struct HolodTabBar: View {
     @Binding var selectedTab: AppTab
     @Namespace private var activeTabNamespace

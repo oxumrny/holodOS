@@ -4,18 +4,48 @@ struct AddProductSheet: View {
     let listTitle: String
     let appearance: HolodListAppearance
     @Binding var productName: String
+    let onDismiss: () -> Void
     let onAdd: () async throws -> Void
 
-    @Environment(\.dismiss) private var dismiss
     @FocusState private var isFocused: Bool
     @State private var errorMessage: String?
     @State private var isSubmitting = false
 
     var body: some View {
+        ZStack {
+            // Invisible dismiss target — no dimming; card floats over the list.
+            Color.clear
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture(perform: dismissAndClear)
+
+            VStack(spacing: 0) {
+                card
+                    .padding(.horizontal, 28)
+                    .padding(.top, 72)
+
+                Spacer(minLength: 0)
+            }
+        }
+        // Keep the dialog fixed; keyboard opens underneath without pushing the card.
+        .ignoresSafeArea(.keyboard)
+        .environment(\.holodListAppearance, appearance)
+        .onAppear { isFocused = true }
+        .preferredColorScheme(appearance == .fridge ? .dark : .light)
+    }
+
+    private var card: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
+            Text("Новый продукт")
+                .font(.holodBodyMedium)
+                .foregroundStyle(appearance.primaryText)
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
             HolodDivider()
-                .padding(.bottom, 20)
+                .padding(.bottom, 16)
 
             VStack(alignment: .leading, spacing: 16) {
                 Text("Продукт будет добавлен в «\(listTitle)»")
@@ -52,28 +82,15 @@ struct AddProductSheet: View {
                 }
             }
             .padding(.horizontal, 20)
-
-            Spacer(minLength: 0)
+            .padding(.bottom, 20)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .holodPaperBackground(appearance.background)
-        .environment(\.holodListAppearance, appearance)
-        .onAppear { isFocused = true }
-        .preferredColorScheme(appearance == .fridge ? .dark : .light)
-        .presentationDetents([.medium])
-        .presentationDragIndicator(.hidden)
-        .presentationCornerRadius(HolodCornerRadius.control)
-        .presentationBackground(appearance.background)
-    }
-
-    private var header: some View {
-        Text("Новый продукт")
-            .font(.holodBodyMedium)
-            .foregroundStyle(appearance.primaryText)
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 12)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        .holodPaperBackground(appearance)
+        .clipShape(RoundedRectangle(cornerRadius: HolodCornerRadius.container, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: HolodCornerRadius.container, style: .continuous)
+                .strokeBorder(appearance.divider, lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.18), radius: 24, y: 10)
     }
 
     private var fieldBorderColor: Color {
@@ -84,6 +101,11 @@ struct AddProductSheet: View {
         isSubmitting || productName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
+    private func dismissAndClear() {
+        isFocused = false
+        onDismiss()
+    }
+
     private func submit() async {
         guard !isSubmitDisabled else { return }
         isSubmitting = true
@@ -91,7 +113,8 @@ struct AddProductSheet: View {
 
         do {
             try await onAdd()
-            dismiss()
+            isFocused = false
+            onDismiss()
         } catch {
             errorMessage = error.localizedDescription
         }

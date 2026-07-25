@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import SwiftUI
 import UIKit
 
 @MainActor
@@ -87,30 +88,88 @@ final class ProductsStore {
     }
 
     func markAsPurchased(_ product: Product) async throws {
-        try await service.restoreProduct(id: product.id)
-        let next = ShoppingProgressStorage.completedCount() + 1
+        let previousShopping = shoppingProducts
+        let previousCompleted = shoppingCompletedToday
+
+        withAnimation(.easeInOut(duration: 0.32)) {
+            shoppingProducts.removeAll { $0.id == product.id }
+        }
+        let next = previousCompleted + 1
         ShoppingProgressStorage.setCompletedCount(next)
         shoppingCompletedToday = next
-        playSuccessHaptic()
-        await refreshAll()
+
+        do {
+            try await service.restoreProduct(id: product.id)
+            await refreshAll()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                shoppingProducts = previousShopping
+            }
+            ShoppingProgressStorage.setCompletedCount(previousCompleted)
+            shoppingCompletedToday = previousCompleted
+            throw error
+        }
     }
 
     func markAsFinished(_ product: Product) async throws {
-        try await service.markAsFinished(id: product.id)
-        playSuccessHaptic()
-        await refreshAll()
+        let previousFridge = fridgeProducts
+        withAnimation(.easeInOut(duration: 0.32)) {
+            fridgeProducts.removeAll { $0.id == product.id }
+        }
+
+        do {
+            try await service.markAsFinished(id: product.id)
+            await refreshAll()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                fridgeProducts = previousFridge
+            }
+            throw error
+        }
     }
 
     func pauseProduct(_ product: Product) async throws {
-        try await service.pauseProduct(id: product.id)
+        let previousFridge = fridgeProducts
+        let previousShopping = shoppingProducts
+        let previousPaused = pausedProducts
+
+        withAnimation(.easeInOut(duration: 0.32)) {
+            fridgeProducts.removeAll { $0.id == product.id }
+            shoppingProducts.removeAll { $0.id == product.id }
+            if !previousPaused.contains(where: { $0.id == product.id }) {
+                pausedProducts = [product] + previousPaused
+            }
+        }
         playSuccessHaptic()
-        await refreshAll()
+
+        do {
+            try await service.pauseProduct(id: product.id)
+            await refreshAll()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                fridgeProducts = previousFridge
+                shoppingProducts = previousShopping
+                pausedProducts = previousPaused
+            }
+            throw error
+        }
     }
 
     func resumeProduct(_ product: Product) async throws {
-        try await service.resumeProduct(id: product.id)
-        playSuccessHaptic()
-        await refreshAll()
+        let previousPaused = pausedProducts
+        withAnimation(.easeInOut(duration: 0.32)) {
+            pausedProducts.removeAll { $0.id == product.id }
+        }
+
+        do {
+            try await service.resumeProduct(id: product.id)
+            await refreshAll()
+        } catch {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                pausedProducts = previousPaused
+            }
+            throw error
+        }
     }
 
     private func refreshWithoutPaused(_ status: ProductStatus) async {
@@ -134,7 +193,9 @@ final class ProductsStore {
     }
 
     private func playSuccessHaptic() {
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.success)
     }
 
     private func setProducts(_ products: [Product], for status: ProductStatus) {
