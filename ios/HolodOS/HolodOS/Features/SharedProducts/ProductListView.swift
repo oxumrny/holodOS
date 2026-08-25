@@ -8,7 +8,6 @@ struct ProductListView: View {
     let emptyDescription: String
     let swipeActionTitle: String
     var allowsPause: Bool = false
-    var appearance: HolodListAppearance = .shopping
     var sectionsExpandedByDefault: Bool = true
     var showsShoppingProgress: Bool = false
 
@@ -60,175 +59,89 @@ struct ProductListView: View {
         !products.isEmpty || hasPausedSection
     }
 
-    private var swipeStyle: HolodSwipeStyle {
-        status == .finished ? .shopping : .fridge
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
-            searchHeader
-
-            Group {
-                if isLoading && products.isEmpty && !hasPausedSection {
-                    HolodLoadingView(message: "Загрузка…")
-                } else if let errorMessage, products.isEmpty && !hasPausedSection {
-                    HolodPlaceholderView(
-                        icon: "exclamationmark.triangle",
-                        title: "Не удалось загрузить",
-                        message: errorMessage,
-                        actionTitle: "Повторить"
-                    ) {
+        Group {
+            if isLoading && products.isEmpty && !hasPausedSection {
+                ProgressView("Загрузка…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let errorMessage, products.isEmpty && !hasPausedSection {
+                ContentUnavailableView {
+                    Label("Не удалось загрузить", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(errorMessage)
+                } actions: {
+                    Button("Повторить") {
                         Task { await store.load(status) }
                     }
-                } else if isEmpty {
-                    HolodPlaceholderView(
-                        icon: emptySystemImage,
-                        title: emptyTitle,
-                        message: emptyDescription
-                    )
-                } else if hasNoSearchResults {
-                    HolodPlaceholderView(
-                        icon: "magnifyingglass",
-                        title: "Ничего не найдено",
-                        message: "По запросу «\(searchText)» нет совпадений"
-                    )
-                } else if showsList {
-                    productList
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .holodPaperBackground(appearance, grainOpacity: 0.065)
-        .environment(\.holodListAppearance, appearance)
-        .overlay(alignment: .top) {
-            if isShowingErrorAlert, let alertMessage {
-                HolodErrorBanner(message: alertMessage) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        isShowingErrorAlert = false
-                    }
-                }
-                .transition(.move(edge: .top).combined(with: .opacity))
-                .padding(.top, 8)
-            }
-        }
-        .overlay {
-            if isShowingAddSheet {
-                AddProductSheet(
-                    listTitle: title,
-                    appearance: appearance,
-                    productName: $newProductName,
-                    onDismiss: {
-                        withAnimation(.easeOut(duration: 0.18)) {
-                            isShowingAddSheet = false
-                        }
-                    },
-                    onAdd: {
-                        try await store.addProduct(name: newProductName, to: status)
-                        newProductName = ""
-                    }
+            } else if isEmpty {
+                ContentUnavailableView(
+                    emptyTitle,
+                    systemImage: emptySystemImage,
+                    description: Text(emptyDescription)
                 )
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            } else if hasNoSearchResults {
+                ContentUnavailableView.search(text: searchText)
+            } else if showsList {
+                productList
             }
         }
-        .animation(.easeOut(duration: 0.18), value: isShowingAddSheet)
-        .animation(.easeInOut(duration: 0.2), value: isShowingErrorAlert)
-        .preference(key: HolodHidesTabBarKey.self, value: isShowingAddSheet)
+        .navigationTitle(title)
+        .searchable(text: $searchText, prompt: "Поиск")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    newProductName = ""
+                    isShowingAddSheet = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel("Добавить продукт")
+            }
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if showsShoppingProgress {
+                ProgressView(value: store.shoppingProgressFraction)
+                    .progressViewStyle(.linear)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                    .accessibilityLabel("Прогресс покупок")
+                    .accessibilityValue("\(Int(store.shoppingProgressFraction * 100)) процентов")
+                    .animation(.easeInOut(duration: 0.25), value: store.shoppingProgressFraction)
+            }
+        }
+        .sheet(isPresented: $isShowingAddSheet) {
+            AddProductSheet(listTitle: title, productName: $newProductName) {
+                try await store.addProduct(name: newProductName, to: status)
+                newProductName = ""
+            }
+        }
+        .alert("Ошибка", isPresented: $isShowingErrorAlert, presenting: alertMessage) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { message in
+            Text(message)
+        }
         .refreshable {
             await store.refresh(status)
         }
         .task {
             await store.load(status)
         }
-        .preferredColorScheme(appearance == .fridge ? .dark : .light)
     }
-
-    // MARK: - Search
-
-    private var searchHeader: some View {
-        VStack(spacing: 0) {
-            searchBarRow
-            HolodDivider()
-
-            if showsShoppingProgress {
-                progressBarRow
-            }
-        }
-        .background(appearance.background)
-    }
-
-    private var searchBarRow: some View {
-        HStack(spacing: HolodSearchMetrics.spacing) {
-            Image(systemName: "magnifyingglass")
-                .font(.holodBody)
-                .foregroundStyle(appearance.searchIcon)
-
-            TextField(
-                "",
-                text: $searchText,
-                prompt: Text("Поиск").foregroundStyle(appearance.searchPlaceholder)
-            )
-            .font(.holodBody)
-            .foregroundStyle(appearance.primaryText)
-            .tint(appearance.searchCaret)
-            .autocorrectionDisabled()
-
-            Button {
-                newProductName = ""
-                withAnimation(.easeOut(duration: 0.18)) {
-                    isShowingAddSheet = true
-                }
-            } label: {
-                Image(systemName: "plus")
-                    .font(.holodBodyMedium)
-                    .foregroundStyle(Color.holodBarleyCorn)
-                    .frame(width: HolodSearchMetrics.trailingActionWidth, height: 32)
-            }
-            .accessibilityLabel("Добавить продукт")
-        }
-        .padding(.horizontal, HolodSearchMetrics.horizontalPadding)
-        .padding(.vertical, 12)
-    }
-
-    private var progressBarRow: some View {
-        HStack(spacing: HolodSearchMetrics.spacing) {
-            Image(systemName: "magnifyingglass")
-                .font(.holodBody)
-                .foregroundStyle(.clear)
-                .accessibilityHidden(true)
-
-            HolodShoppingProgressBar(progress: store.shoppingProgressFraction)
-                .animation(.easeInOut(duration: 0.25), value: store.shoppingProgressFraction)
-                .animation(.easeInOut(duration: 0.25), value: store.shoppingCompletedToday)
-                .animation(.easeInOut(duration: 0.25), value: products.count)
-
-            Color.clear
-                .frame(width: HolodSearchMetrics.trailingActionWidth, height: 1)
-                .accessibilityHidden(true)
-        }
-        .padding(.horizontal, HolodSearchMetrics.horizontalPadding)
-        .padding(.top, HolodSearchMetrics.progressVerticalPadding)
-        .padding(.bottom, HolodSearchMetrics.progressVerticalPadding)
-    }
-
-    // MARK: - List
 
     private var productList: some View {
         List {
-            ForEach(Array(sections.enumerated()), id: \.element.id) { index, section in
+            ForEach(sections) { section in
                 Section {
                     if isSectionExpanded(section.id) {
                         ForEach(section.products) { product in
                             productRow(product)
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(appearance.background)
-                                .listRowInsets(rowInsets)
                         }
                     }
                 } header: {
                     CollapsibleSectionHeader(
                         title: section.title,
-                        isExpanded: isSectionExpanded(section.id),
-                        showsTopDivider: index > 0
+                        isExpanded: isSectionExpanded(section.id)
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             toggleSection(section.id)
@@ -243,9 +156,7 @@ struct ProductListView: View {
                 }
             }
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .background(appearance.background)
+        .listStyle(.insetGrouped)
     }
 
     private func isSectionExpanded(_ id: String) -> Bool {
@@ -269,29 +180,41 @@ struct ProductListView: View {
         }
     }
 
-    private var rowInsets: EdgeInsets {
-        EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-    }
-
-    // MARK: - Row
-
     @ViewBuilder
     private func productRow(_ product: Product) -> some View {
         ProductRowView(product: product)
-        .holodEdgeSwipe(style: swipeStyle, accessibilityLabel: swipeActionTitle) {
-            Task { await performSwipe(for: product) }
-        }
-        .contextMenu {
-            if allowsPause {
-                Button("Отложить", systemImage: "pause.circle") {
-                    Task { await pause(product) }
+            .swipeActions(edge: swipeEdge, allowsFullSwipe: true) {
+                Button {
+                    Task { await performSwipe(for: product) }
+                } label: {
+                    Label(swipeActionTitle, systemImage: swipeSystemImage)
                 }
-                .accessibilityLabel("Отложить продукт")
+                .tint(swipeTint)
             }
-        }
+            .contextMenu {
+                if allowsPause {
+                    Button("Отложить", systemImage: "pause.circle") {
+                        Task { await pause(product) }
+                    }
+                    .accessibilityLabel("Отложить продукт")
+                }
+            }
+            .accessibilityAction(named: swipeActionTitle) {
+                Task { await performSwipe(for: product) }
+            }
     }
 
-    // MARK: - Actions
+    private var swipeEdge: HorizontalEdge {
+        status == .finished ? .leading : .trailing
+    }
+
+    private var swipeSystemImage: String {
+        status == .finished ? "checkmark" : "cart"
+    }
+
+    private var swipeTint: Color {
+        status == .finished ? .green : .orange
+    }
 
     private func performSwipe(for product: Product) async {
         do {

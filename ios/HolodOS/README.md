@@ -1,6 +1,8 @@
 # holodOS iOS
 
-Нативное iOS-приложение (Iteration 1). Backend — тот же Supabase, что у веб-приложения.
+Нативное iOS-приложение (Iteration 1). Backend — тот же Supabase, что у веб-приложения. UI — системный iOS (`TabView`, `NavigationStack`, `List`).
+
+Кастомный визуальный прототип заморожен в ветке `cursor/ios-design-prototype` (тег `ios-design-prototype-v1`).
 
 ## Требования
 
@@ -37,18 +39,18 @@ URL и anon key подставляются в `HolodOS/Info.plist` при сбо
 
 Стартовая вкладка — **Покупки** (`status = finished`). **Холодос** — `status = active`.
 
-### Iteration 1 (шаг 2)
+### Iteration 1
 
-- Добавление: кнопка `+` в toolbar
-- Перенос: swipe «Куплено» / «Закончилось»
-- Отложить (Покупки): long press → «Отложить»; секция «Отложено» → swipe «Вернуть»
-- Поиск, pull-to-refresh, категории, индикатор мастхэва
+- Добавление: кнопка `+` в toolbar, системный sheet
+- Перенос: системный swipe «Куплено» / «Закончилось»
+- Отложить: long press → «Отложить»; секция «Отложено» → swipe «Вернуть»
+- Поиск (`.searchable`), pull-to-refresh, категории, индикатор мастхэва
 
 ## Структура
 
 ```
 HolodOS/
-  App/                 # точка входа, TabView
+  App/                 # точка входа, системный TabView
   Features/
     Shopping/          # вкладка покупок
     Fridge/            # вкладка холодоса

@@ -20,5 +20,7 @@ struct ShoppingListView: View {
 }
 
 #Preview {
-    ShoppingListView(store: ProductsStore())
+    NavigationStack {
+        ShoppingListView(store: ProductsStore())
+    }
 }

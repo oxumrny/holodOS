@@ -12,12 +12,13 @@ struct FridgeListView: View {
             emptyDescription: "Нажмите +, чтобы добавить продукт.",
             swipeActionTitle: "Закончилось",
             allowsPause: true,
-            appearance: .fridge,
             store: store
         )
     }
 }
 
 #Preview {
-    FridgeListView(store: ProductsStore())
+    NavigationStack {
+        FridgeListView(store: ProductsStore())
+    }
 }

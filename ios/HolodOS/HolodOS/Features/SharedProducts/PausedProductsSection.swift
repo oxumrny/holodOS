@@ -3,30 +3,25 @@ import SwiftUI
 struct PausedProductRowView: View {
     let product: Product
 
-    @Environment(\.holodListAppearance) private var appearance
-
     var body: some View {
-        HStack(spacing: HolodListMetrics.rowSpacing) {
+        HStack {
             Image(systemName: product.status == .active ? "refrigerator" : "cart")
-                .font(.holodCaption)
-                .foregroundStyle(appearance.secondaryText.opacity(0.65))
+                .foregroundStyle(.secondary)
                 .frame(width: 20)
                 .accessibilityHidden(true)
 
             Text(product.name)
-                .font(.holodBody)
-                .foregroundStyle(appearance.mutedText)
+                .foregroundStyle(.secondary)
 
             Spacer(minLength: 0)
 
             if product.isFavorite {
                 Image(systemName: "star.fill")
-                    .font(.holodCaption)
-                    .foregroundStyle(Color.holodBarleyCorn)
+                    .font(.footnote)
+                    .foregroundStyle(.yellow)
                     .accessibilityLabel("Мастхэв")
             }
         }
-        .padding(.vertical, HolodListMetrics.rowVerticalPadding)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
     }
@@ -41,7 +36,6 @@ struct PausedProductsSection: View {
     let products: [Product]
     let onResume: (Product) -> Void
 
-    @Environment(\.holodListAppearance) private var appearance
     @State private var isExpanded = false
 
     var body: some View {
@@ -50,22 +44,23 @@ struct PausedProductsSection: View {
                 if isExpanded {
                     ForEach(products) { product in
                         PausedProductRowView(product: product)
-                            .holodEdgeSwipe(
-                                style: .paused,
-                                accessibilityLabel: "Вернуть в списки"
-                            ) {
+                            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                Button {
+                                    onResume(product)
+                                } label: {
+                                    Label("Вернуть", systemImage: "arrow.uturn.backward")
+                                }
+                                .tint(.blue)
+                            }
+                            .accessibilityAction(named: "Вернуть в списки") {
                                 onResume(product)
                             }
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(appearance.background)
-                            .listRowInsets(rowInsets)
                     }
                 }
             } header: {
                 CollapsibleSectionHeader(
                     title: "Отложено (\(products.count))",
-                    isExpanded: isExpanded,
-                    showsTopDivider: true
+                    isExpanded: isExpanded
                 ) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isExpanded.toggle()
@@ -73,9 +68,5 @@ struct PausedProductsSection: View {
                 }
             }
         }
-    }
-
-    private var rowInsets: EdgeInsets {
-        EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
     }
 }

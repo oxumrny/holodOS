@@ -1,36 +1,32 @@
 import SwiftUI
 
+enum AppTab: String {
+    case shopping
+    case fridge
+}
+
 struct RootTabView: View {
     @AppStorage("selectedTab") private var selectedTab: AppTab = .shopping
     @State private var store = ProductsStore()
-    @State private var hidesTabBar = false
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Group {
-                switch selectedTab {
-                case .shopping:
-                    ShoppingListView(store: store)
-                case .fridge:
-                    FridgeListView(store: store)
-                }
+        TabView(selection: $selectedTab) {
+            NavigationStack {
+                ShoppingListView(store: store)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                Color.clear.frame(height: hidesTabBar ? 0 : HolodTabBarMetrics.scrollClearance)
+            .tabItem {
+                Label("Покупки", systemImage: "cart")
             }
-            .onPreferenceChange(HolodHidesTabBarKey.self) { hidesTabBar = $0 }
+            .tag(AppTab.shopping)
 
-            if !hidesTabBar {
-                HolodTabBar(selectedTab: $selectedTab)
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, HolodTabBarMetrics.bottomInset)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            NavigationStack {
+                FridgeListView(store: store)
             }
+            .tabItem {
+                Label("Холодос", systemImage: "refrigerator")
+            }
+            .tag(AppTab.fridge)
         }
-        .background(selectedTab == .fridge ? Color.holodMineShaft : Color.holodWhiteRock)
-        .animation(.easeOut(duration: 0.18), value: hidesTabBar)
-        .preferredColorScheme(.light)
     }
 }
 

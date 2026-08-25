@@ -94,6 +94,7 @@ final class ProductsStore {
         withAnimation(.easeInOut(duration: 0.32)) {
             shoppingProducts.removeAll { $0.id == product.id }
         }
+        playSuccessHaptic()
         let next = previousCompleted + 1
         ShoppingProgressStorage.setCompletedCount(next)
         shoppingCompletedToday = next
@@ -116,6 +117,7 @@ final class ProductsStore {
         withAnimation(.easeInOut(duration: 0.32)) {
             fridgeProducts.removeAll { $0.id == product.id }
         }
+        playSuccessHaptic()
 
         do {
             try await service.markAsFinished(id: product.id)
@@ -160,6 +162,7 @@ final class ProductsStore {
         withAnimation(.easeInOut(duration: 0.32)) {
             pausedProducts.removeAll { $0.id == product.id }
         }
+        playSuccessHaptic()
 
         do {
             try await service.resumeProduct(id: product.id)
